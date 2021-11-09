@@ -1,0 +1,20 @@
+# markup language
+# superset of JSON
+# simple types can be defined + List + Object + Dictionary/Map
+# Parse and yaml validator
+customerName: Raphael
+orderId: 123
+date: 20/4/2021
+shipped: false
+moreData: null
+products: 
+  - macBook
+  - Iphone
+  - Android
+  - phone: Samsung
+products2: [name: R]
+address: 
+  street: yonge street
+  city: Toronto
+  year: 2021
+

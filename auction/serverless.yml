@@ -1,0 +1,21 @@
+service:
+  name: auction
+
+plugins:
+  - serverless-bundle
+  - serverless-pseudo-parameters
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  memorySize: 256
+  stage: ${opt:stage, 'dev'}
+  region: ca-central-1
+  
+functions:
+  createAuction:
+    handler: src/handlers/createAuction.handler
+    events:
+      - http:
+          method: POST
+          path: /createAuction

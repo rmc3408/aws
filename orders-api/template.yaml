@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  orders-api
+
+
+Globals:
+  Function:
+    Timeout: 2
+    Runtime: python3.9
+    Environment:
+      Variables:
+        ORDERS_TABLE: !Ref OrdersTable
+
+Resources:
+  CreateOrderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: orders-api/
+      Handler: create.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        CreateOrders:
+          Type: Api
+          Properties:
+            Path: /create
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+  ReadOneOrderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: orders-api/
+      Handler: read-one.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        CreateOrders:
+          Type: Api
+          Properties:
+            Path: /read/{id}
+            Method: GET
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref OrdersTable
+  OrdersTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: id
+        Type: Number
+
+
+
+
+
