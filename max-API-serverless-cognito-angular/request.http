@@ -1,0 +1,10 @@
+POST https://lhkfx2zutj.execute-api.us-east-1.amazonaws.com/dev/compare HTTP/1.1
+Content-Type: application/json
+
+{
+    "age": 23,
+    "height": 233,
+    "income": 2313
+}
+
+#

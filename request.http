@@ -1,0 +1,75 @@
+GET https://lhkfx2zutj.execute-api.us-east-1.amazonaws.com/dev/compare/all HTTP/1.1
+content-type: application/json
+
+###
+GET https://lhkfx2zutj.execute-api.us-east-1.amazonaws.com/dev/compare/single?id=ha839jdwiba1-d1 HTTP/1.1
+content-type: application/json
+
+###
+
+DELETE https://lhkfx2zutj.execute-api.us-east-1.amazonaws.com/dev/compare HTTP/1.1
+content-type: application/json
+
+{
+    "age": 41,
+    "height": 181,
+    "income": 40000,
+    "payload": "testing"
+}
+
+###
+
+POST https://lhkfx2zutj.execute-api.us-east-1.amazonaws.com/dev/compare HTTP/1.1
+content-type: application/json
+authorizationToken: allow
+
+{
+    "age": "10",
+    "height": "181",
+    "income": "40000",
+    "payload": {
+      "TemperatureK": "404",
+      "windKmh": "-3",
+  	  "humidityPct": "0.55",
+      "pressureHPa": "1020"
+    }
+}
+
+
+###
+# to create a JSON
+# https://www.liquid-technologies.com/online-json-to-schema-converter
+
+
+
+###
+# const data = { "payload": { "TemperatureK": 301 }};
+# const fullURL = 'https://lhkfx2zutj.execute-api.us-east-1.amazonaws.com/dev/compare'
+# fetch(fullURL, {
+#   method: 'POST',
+#   headers: {
+#     'Content-Type': 'application/json',
+#   },
+#   body: JSON.stringify(data),
+# })
+#   .then((response) => response.json())
+#   .then((data) => {
+#     console.log('Success:', data);
+#   })
+#   .catch((error) => {
+#     console.error('Error:', error);
+#   });
+
+
+###
+# const fullURL = 'https://lhkfx2zutj.execute-api.us-east-1.amazonaws.com/dev/compare'
+# const newFullURL = fullURL + '/all';
+# fetch(newFullURL, { method: 'GET' })
+#   .then((response) => response.json())
+#   .then((data) => {
+#     console.log('Success:', data);
+#   })
+#   .catch((error) => {
+#     console.error('Error:', error);
+#   });
+
