@@ -3,6 +3,8 @@ import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import ApiGatewayStack from '../lib/api-stack';
 import ProductsStack from '../lib/products-stack';
+import ProductsLayersStack from '../lib/products-layer';
+
 
 const app = new cdk.App();
 
@@ -13,10 +15,17 @@ const myAwsEnv: cdk.Environment = {
   region: 'us-east-1',
   account: '631766433992',
 };
+ 
+const productsLayerStackCreated = new ProductsLayersStack(app, 'ProductsLayer-App', { env: myAwsEnv }) //Layer with share code between lambdas
 
-const productsFetchStackCreated = new ProductsStack(app, 'ProductsFetch-App', {})
-cdk.Tags.of(productsFetchStackCreated).add('Team', 'Ecommerce-Products')
+const productsStackCreated = new ProductsStack(app, 'ProductsFetch-App', { })
+cdk.Tags.of(productsStackCreated).add('Team', 'Ecommerce-Products')
+productsStackCreated.addDependency(productsLayerStackCreated);
 
-const ApiGatewayStackCreated = new ApiGatewayStack(app, 'ApiGateway-App', { productsFetch: productsFetchStackCreated.productsfetchHandler });
+const ApiGatewayStackCreated = new ApiGatewayStack(app, 'ApiGateway-App', { 
+  productsFetch: productsStackCreated.productsfetchHandler,
+  productsAdmin: productsStackCreated.productsAdminHandler,
+  env: myAwsEnv
+});
 cdk.Tags.of(ApiGatewayStackCreated).add('Team', 'Ecommerce-API')
-ApiGatewayStackCreated.addDependency(productsFetchStackCreated) // certify products will be used as Dependency.
+ApiGatewayStackCreated.addDependency(productsStackCreated) // certify products will be used as Dependency.

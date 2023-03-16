@@ -1,0 +1,16 @@
+### GET All Products
+GET https://uy26fksha3.execute-api.us-east-1.amazonaws.com/prod/products HTTP/1.1
+
+
+### GET One Product 
+GET https://uy26fksha3.execute-api.us-east-1.amazonaws.com/prod/products/23 HTTP/1.1
+
+
+### POST - Create Product
+POST https://uy26fksha3.execute-api.us-east-1.amazonaws.com/prod/products HTTP/1.1
+
+### PUT - Update Product 
+PUT https://uy26fksha3.execute-api.us-east-1.amazonaws.com/prod/products/22 HTTP/1.1
+
+### DELETE - remove Product 
+DELETE https://uy26fksha3.execute-api.us-east-1.amazonaws.com/prod/products/21 HTTP/1.1

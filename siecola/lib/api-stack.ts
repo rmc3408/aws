@@ -6,12 +6,12 @@ import { LogGroup } from 'aws-cdk-lib/aws-logs';
 
 interface ApiGatewayIntegrationProps extends StackProps {
   productsFetch: NodejsFunction;
+  productsAdmin: NodejsFunction;
 }
 
 class ApiGatewayStack extends Stack {
   constructor(scope: Construct, id: string, props: ApiGatewayIntegrationProps) {
     super(scope, id, props);
-    console.log('API gateway stack class created');
 
     const logGroup = new LogGroup(this, 'ApiGatewayLogs');
     const logApiDestiny = new LogGroupLogDestination(logGroup);
@@ -27,7 +27,21 @@ class ApiGatewayStack extends Stack {
     });
 
     const productsFetchIntegrated = new LambdaIntegration(props.productsFetch);
-    const productsFetchWithApi = api.root.addResource('products').addMethod('GET', productsFetchIntegrated);
+    const productsAdminIntegrated = new LambdaIntegration(props.productsAdmin);
+    const productsResource = api.root.addResource('products');
+
+    // GET - '/products'
+    productsResource.addMethod('GET', productsFetchIntegrated);
+    // POST - '/products/'
+    productsResource.addMethod('POST', productsAdminIntegrated);
+
+    const productIdResource = productsResource.addResource('{id}');
+    // // GET - '/products/{id}'
+    productIdResource.addMethod('GET', productsFetchIntegrated);
+    // PUT - '/products/{id}'
+    productIdResource.addMethod('PUT', productsAdminIntegrated);
+    // DELETE - '/products/{id}'
+    productIdResource.addMethod('DELETE', productsAdminIntegrated);
   }
 }
 

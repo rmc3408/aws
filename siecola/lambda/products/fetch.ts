@@ -7,15 +7,22 @@ export async function productsFetchHandler(event: APIGatewayProxyEvent, ctx: Con
 
   console.log('API request id', apiRequestId, ' and lambda request id', lambdaExecutionId);
 
-  if (event.httpMethod == 'GET' && event.resource == '/products') {
-    console.log('GET - Products')
+  if (event.httpMethod == 'GET' && event.resource == '/products' && event.pathParameters == null) {
+    console.log('GET All Products', JSON.stringify(event, null, 2))
     return {
       statusCode: 200,
       headers: {},
       body: JSON.stringify({ message: "hello products" }),
     }
   }
-  console.log('Method or resource unknows');
+  if (event.httpMethod == 'GET' && event.resource == '/products/{id}' && event.pathParameters != null) {
+    console.log(event.pathParameters, event.resource)
+    return {
+      statusCode: 200,
+      headers: {},
+      body: JSON.stringify({ message: `GET ${event.pathParameters.id} product`}),
+    }
+  }
   return {
     statusCode: 400,
     headers: {},
