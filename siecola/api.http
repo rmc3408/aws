@@ -1,0 +1,2 @@
+# Products - GET 
+GET https://uy26fksha3.execute-api.us-east-1.amazonaws.com/prod/products HTTP/1.1

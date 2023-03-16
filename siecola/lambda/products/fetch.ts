@@ -14,12 +14,11 @@ export async function productsFetchHandler(event: APIGatewayProxyEvent, ctx: Con
       headers: {},
       body: JSON.stringify({ message: "hello products" }),
     }
-  } else {
-    console.log('Method or resource unknows');
-    return {
-      statusCode: 400,
-      headers: {},
-      body: JSON.stringify({ message: "no products found in this endpoint"}),
-    }
+  }
+  console.log('Method or resource unknows');
+  return {
+    statusCode: 400,
+    headers: {},
+    body: JSON.stringify({ message: "no products found in this endpoint"}),
   }
 }

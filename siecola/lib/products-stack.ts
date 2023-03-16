@@ -2,11 +2,12 @@ import { Stack, Duration } from 'aws-cdk-lib';
 import { NodejsFunctionProps, NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 
-class ProductAppStack extends Stack {
+class ProductsStack extends Stack {
   public readonly productsfetchHandler: NodejsFunction;
 
   constructor(scope: Construct, id: string, props?: NodejsFunctionProps) {
     super(scope, id, props)
+    console.log('products stack class created');
 
     this.productsfetchHandler = new NodejsFunction(this, "ProductsFetchFunctionStack", {
       functionName: 'productsFetchFunction',
@@ -22,4 +23,4 @@ class ProductAppStack extends Stack {
   }
 }
 
-export default ProductAppStack;
+export default ProductsStack;
