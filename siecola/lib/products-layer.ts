@@ -10,10 +10,10 @@ export default class ProductsLayersStack extends Stack {
       super(scope, id, props)
 
       this.productsLayers = new LayerVersion(this, "ProductsLayer", {
-         code: Code.fromAsset('lambda/products/layers'),
-         compatibleRuntimes: [Runtime.NODEJS_14_X],
+         code: Code.fromAsset('lambda/products/layers/productsLayer'),
+         compatibleRuntimes: [Runtime.NODEJS_16_X],
          layerVersionName: "ProductsLayer",
-         removalPolicy: RemovalPolicy.RETAIN
+         //removalPolicy: RemovalPolicy.RETAIN
       })
       new StringParameter(this, "ProductsLayerVersionArn", {
          parameterName: "ProductsParameterArn",

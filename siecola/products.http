@@ -1,16 +1,36 @@
 ### GET All Products
-GET https://uy26fksha3.execute-api.us-east-1.amazonaws.com/prod/products HTTP/1.1
+GET https://8dwqcggifa.execute-api.us-east-1.amazonaws.com/prod/products HTTP/1.1
 
 
 ### GET One Product 
-GET https://uy26fksha3.execute-api.us-east-1.amazonaws.com/prod/products/23 HTTP/1.1
+GET https://8dwqcggifa.execute-api.us-east-1.amazonaws.com/prod/products/5b68d3b8-f4b7-4b59-9be5-0ffb4ff085ce HTTP/1.1
 
 
 ### POST - Create Product
-POST https://uy26fksha3.execute-api.us-east-1.amazonaws.com/prod/products HTTP/1.1
+POST https://8dwqcggifa.execute-api.us-east-1.amazonaws.com/prod/products HTTP/1.1
+content-type: application/json
+
+{
+  "productName": "Sport tennis Ball",
+  "productUrl": "ball/100",
+  "model": "Tennis",
+  "price": 19.00,
+  "code": "100"
+}
+
 
 ### PUT - Update Product 
-PUT https://uy26fksha3.execute-api.us-east-1.amazonaws.com/prod/products/22 HTTP/1.1
+PUT https://8dwqcggifa.execute-api.us-east-1.amazonaws.com/prod/products/5b68d3b8-f4b7-4b59-9be5-0ffb4ff085ce HTTP/1.1
+content-type: application/json
+
+{
+  "productName": "Bycicle",
+  "productUrl": "bike/200",
+  "model": "Caloi",
+  "price": 199.99,
+  "code": "200"
+}
+
 
 ### DELETE - remove Product 
-DELETE https://uy26fksha3.execute-api.us-east-1.amazonaws.com/prod/products/21 HTTP/1.1
+DELETE https://8dwqcggifa.execute-api.us-east-1.amazonaws.com/prod/products/a99adff9-49ff-4145-bd9f-d6299a243ec5 HTTP/1.1

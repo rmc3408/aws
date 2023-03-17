@@ -14,16 +14,21 @@ class ProductsStack extends Stack {
   constructor(scope: Construct, id: string, props?: NodejsFunctionProps) {
     super(scope, id, props)
 
+    // Create of Dynamo DB Table
     this.productsDatabase = new Table(this, 'ProductsDB', {
+      tableName: "products",
       removalPolicy: RemovalPolicy.DESTROY,
       partitionKey: { name: 'id', type: AttributeType.STRING },
       billingMode:  BillingMode.PROVISIONED,
       readCapacity: 1,
       writeCapacity: 1,
     })
+
+    // Get Layer Value from AWS SSM and connect to Product Layer Stack
     const productsArnValue = StringParameter.valueForStringParameter(this, 'ProductsParameterArn')
     const layerConnectedValueProducts = LayerVersion.fromLayerVersionArn(this, 'ProductsLayer', productsArnValue);
 
+    // Lambda Function for GET products - All or One
     this.productsfetchHandler = new NodejsFunction(this, "ProductsFetchFunctionStack", {
       functionName: 'productsFetchFunction',
       handler: "productsFetchHandler",
@@ -37,11 +42,11 @@ class ProductsStack extends Stack {
       environment: {
         PRODUCTS_DB: this.productsDatabase.tableName
       },
-      layers: [layerConnectedValueProducts]
+      layers: [layerConnectedValueProducts] //connect Lambda to Lambda
     })
-    
-    this.productsDatabase.grantReadData(this.productsfetchHandler)
+    this.productsDatabase.grantReadData(this.productsfetchHandler) // Grant access for function return data to database
 
+     // Lambda Function for GET products - All or One
     this.productsAdminHandler = new NodejsFunction(this, "ProductsAdminFunctionStack", {
       functionName: 'productsAdminFunction',
       handler: "productsAdminHandler",
@@ -55,9 +60,8 @@ class ProductsStack extends Stack {
       environment: {
         PRODUCTS_DB: this.productsDatabase.tableName
       },
-      layers: [layerConnectedValueProducts]
+      layers: [layerConnectedValueProducts] //connect Lambda to Lambda
     })
-    
     this.productsDatabase.grantWriteData(this.productsAdminHandler)
   }
 }
