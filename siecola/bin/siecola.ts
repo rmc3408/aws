@@ -18,8 +18,7 @@ const myAwsEnv: cdk.Environment = {
  
 const productsLayerStackCreated = new ProductsLayersStack(app, 'ProductsLayer-App', { env: myAwsEnv }) //Layer with share code between lambdas
 
-const productsStackCreated = new ProductsStack(app, 'ProductsFetch-App', { })
-cdk.Tags.of(productsStackCreated).add('Team', 'Ecommerce-Products')
+const productsStackCreated = new ProductsStack(app, 'ProductsLambda-App', { })
 productsStackCreated.addDependency(productsLayerStackCreated);
 
 const ApiGatewayStackCreated = new ApiGatewayStack(app, 'ApiGateway-App', { 
@@ -27,5 +26,9 @@ const ApiGatewayStackCreated = new ApiGatewayStack(app, 'ApiGateway-App', {
   productsAdmin: productsStackCreated.productsAdminHandler,
   env: myAwsEnv
 });
-cdk.Tags.of(ApiGatewayStackCreated).add('Team', 'Ecommerce-API')
 ApiGatewayStackCreated.addDependency(productsStackCreated) // certify products will be used as Dependency.
+
+cdk.Tags.of(productsStackCreated).add('Team', 'Ecommerce-Products')
+cdk.Tags.of(ApiGatewayStackCreated).add('Team', 'Ecommerce-API')
+
+

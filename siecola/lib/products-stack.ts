@@ -3,7 +3,8 @@ import { NodejsFunctionProps, NodejsFunction } from 'aws-cdk-lib/aws-lambda-node
 import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
-import { LayerVersion } from 'aws-cdk-lib/aws-lambda';
+import { LayerVersion, Tracing, LambdaInsightsVersion } from 'aws-cdk-lib/aws-lambda';
+
 
 class ProductsStack extends Stack {
   public readonly productsfetchHandler: NodejsFunction;
@@ -32,6 +33,8 @@ class ProductsStack extends Stack {
     this.productsfetchHandler = new NodejsFunction(this, "ProductsFetchFunctionStack", {
       functionName: 'productsFetchFunction',
       handler: "productsFetchHandler",
+      tracing: Tracing.ACTIVE,
+      insightsVersion: LambdaInsightsVersion.VERSION_1_0_135_0,
       memorySize: 128,
       timeout: Duration.seconds(3),
       entry: "lambda/products/fetch.ts",
@@ -50,6 +53,8 @@ class ProductsStack extends Stack {
     this.productsAdminHandler = new NodejsFunction(this, "ProductsAdminFunctionStack", {
       functionName: 'productsAdminFunction',
       handler: "productsAdminHandler",
+      tracing: Tracing.ACTIVE,
+      insightsVersion: LambdaInsightsVersion.VERSION_1_0_135_0,
       memorySize: 128,
       timeout: Duration.seconds(3),
       entry: "lambda/products/admin.ts",

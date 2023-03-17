@@ -1,13 +1,16 @@
+@baseEndpoint = https://7tqko16m7h.execute-api.us-east-1.amazonaws.com/prod
+@productId = d40518d3-1bdd-470a-a564-7a8e007c4f0c
+
 ### GET All Products
-GET https://8dwqcggifa.execute-api.us-east-1.amazonaws.com/prod/products HTTP/1.1
+GET {{baseEndpoint}}/products HTTP/1.1
 
 
 ### GET One Product 
-GET https://8dwqcggifa.execute-api.us-east-1.amazonaws.com/prod/products/5b68d3b8-f4b7-4b59-9be5-0ffb4ff085ce HTTP/1.1
+GET {{baseEndpoint}}/products/{{productId}} HTTP/1.1
 
 
 ### POST - Create Product
-POST https://8dwqcggifa.execute-api.us-east-1.amazonaws.com/prod/products HTTP/1.1
+POST {{baseEndpoint}}/products HTTP/1.1
 content-type: application/json
 
 {
@@ -15,12 +18,12 @@ content-type: application/json
   "productUrl": "ball/100",
   "model": "Tennis",
   "price": 19.00,
-  "code": "100"
+  "code": "000"
 }
 
 
 ### PUT - Update Product 
-PUT https://8dwqcggifa.execute-api.us-east-1.amazonaws.com/prod/products/5b68d3b8-f4b7-4b59-9be5-0ffb4ff085ce HTTP/1.1
+PUT {{baseEndpoint}}/products/{{productId}} HTTP/1.1
 content-type: application/json
 
 {
@@ -33,4 +36,4 @@ content-type: application/json
 
 
 ### DELETE - remove Product 
-DELETE https://8dwqcggifa.execute-api.us-east-1.amazonaws.com/prod/products/a99adff9-49ff-4145-bd9f-d6299a243ec5 HTTP/1.1
+DELETE {{baseEndpoint}}/products/{{productId}} HTTP/1.1

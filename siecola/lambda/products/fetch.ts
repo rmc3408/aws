@@ -1,13 +1,16 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 import ProductsRepository from "/opt/node/productsLayer";
 import { DynamoDB } from 'aws-sdk';
+import { captureAWS } from 'aws-xray-sdk'
 
+// This process is executed only once during Initialization of Function in NODEJS.
+captureAWS(require('aws-sdk'));
 const tableNameEnviroment = process.env.PRODUCTS_DB!;
 const dynamoDBClient = new DynamoDB.DocumentClient();
 
 const productsRepositoryInstance = new ProductsRepository(dynamoDBClient, tableNameEnviroment);
 
-
+// This process is executed Invocation of Function in NODEJS.
 export async function productsFetchHandler(event: APIGatewayProxyEvent, ctx: Context): Promise<APIGatewayProxyResult> {
 
   const { awsRequestId: lambdaExecutionId } = ctx; // function ID of lambda execution
@@ -16,7 +19,7 @@ export async function productsFetchHandler(event: APIGatewayProxyEvent, ctx: Con
 
 
   if (event.httpMethod == 'GET' && event.resource == '/products' && event.pathParameters == null) {
-    console.log('GET All Products', JSON.stringify(event, null, 2))
+    console.log('GET All Products')
 
     const result = await productsRepositoryInstance.getAllProducts()
     return {
@@ -28,6 +31,7 @@ export async function productsFetchHandler(event: APIGatewayProxyEvent, ctx: Con
 
 
   if (event.httpMethod == 'GET' && event.resource == '/products/{id}' && event.pathParameters!.id != undefined) {
+    console.log('GET One Product')
     const id = event.pathParameters!.id
     const result = await productsRepositoryInstance.getOneProduct(id)
     return {
