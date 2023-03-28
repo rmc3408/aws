@@ -49,7 +49,7 @@ class ProductsRepository {
     return product
   } 
 
-  async deleteProduct(productId: string): Promise<string> {
+  async deleteProduct(productId: string): Promise<Product | string> {
     const params: DocumentClient.DeleteItemInput = {
       TableName: this.tableName,
       ReturnValues: "ALL_OLD",
@@ -60,7 +60,7 @@ class ProductsRepository {
 
     const result = await this.client.delete(params).promise()
     if (result.Attributes == undefined) return 'Product not Found'
-    return productId
+    return result.Attributes as Product
   } 
   
   async updateProduct(productId: string, product: Product): Promise<Product | string> {

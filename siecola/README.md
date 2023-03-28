@@ -16,3 +16,4 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * `cdk synth`       emits the synthesized CloudFormation template
 * `cdk destroy`     remove all stacks from CloudFormation template
 
+rm  ~/.docker/config.json 

@@ -5,6 +5,7 @@ import { StringParameter } from "aws-cdk-lib/aws-ssm"
 
 export default class ProductsLayersStack extends Stack {
    readonly productsLayers: LayerVersion
+   readonly productEventsLayers: LayerVersion
 
    constructor(scope: Construct, id: string, props?: StackProps) {
       super(scope, id, props)
@@ -18,6 +19,17 @@ export default class ProductsLayersStack extends Stack {
       new StringParameter(this, "ProductsLayerVersionArn", {
          parameterName: "ProductsParameterArn",
          stringValue: this.productsLayers.layerVersionArn
+      })
+
+      this.productEventsLayers = new LayerVersion(this, "ProductEventLayer", {
+         code: Code.fromAsset('lambda/products/layers/productEventLayer'),
+         compatibleRuntimes: [Runtime.NODEJS_16_X],
+         layerVersionName: "ProductEventsLayer",
+         //removalPolicy: RemovalPolicy.RETAIN
+      })
+      new StringParameter(this, "ProductEventsLayerVersionArn", {
+         parameterName: "ProductEventsParameterArn",
+         stringValue: this.productEventsLayers.layerVersionArn
       })
    }
 }

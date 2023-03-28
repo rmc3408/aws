@@ -4,6 +4,7 @@ import * as cdk from 'aws-cdk-lib';
 import ApiGatewayStack from '../lib/api-stack';
 import ProductsStack from '../lib/products-stack';
 import ProductsLayersStack from '../lib/products-layer';
+import EventProductsStack from '../lib/event-product-stack';
 
 
 const app = new cdk.App();
@@ -15,11 +16,12 @@ const myAwsEnv: cdk.Environment = {
   region: 'us-east-1',
   account: '631766433992',
 };
- 
-const productsLayerStackCreated = new ProductsLayersStack(app, 'ProductsLayer-App', { env: myAwsEnv }) //Layer with share code between lambdas
 
-const productsStackCreated = new ProductsStack(app, 'ProductsLambda-App', { })
+const productsLayerStackCreated = new ProductsLayersStack(app, 'ProductsLayer-App', { env: myAwsEnv }) //Layer with share code between lambdas
+const productEventStack = new EventProductsStack(app, 'EventsProduct-App');
+const productsStackCreated = new ProductsStack(app, 'ProductsLambda-App', { eventDatabase: productEventStack.productsEventDatabase, env: myAwsEnv })
 productsStackCreated.addDependency(productsLayerStackCreated);
+productsStackCreated.addDependency(productEventStack);
 
 const ApiGatewayStackCreated = new ApiGatewayStack(app, 'ApiGateway-App', { 
   productsFetch: productsStackCreated.productsfetchHandler,

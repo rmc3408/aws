@@ -1,5 +1,4 @@
-import { Stack, RemovalPolicy } from 'aws-cdk-lib';
-import { NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Stack, RemovalPolicy, StackProps } from 'aws-cdk-lib';
 import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 
@@ -7,7 +6,7 @@ import { Construct } from 'constructs';
 class EventProductsStack extends Stack {
   public readonly productsEventDatabase: Table
 
-  constructor(scope: Construct, id: string, props?: NodejsFunctionProps) {
+  constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props)
 
     // Create of Dynamo DB Table

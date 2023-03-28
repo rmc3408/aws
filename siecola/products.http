@@ -1,5 +1,5 @@
 @baseEndpoint = https://7tqko16m7h.execute-api.us-east-1.amazonaws.com/prod
-@productId = d40518d3-1bdd-470a-a564-7a8e007c4f0c
+@productId = 021781d3-3251-4ae9-949c-cb2bab1d2eaa
 
 ### GET All Products
 GET {{baseEndpoint}}/products HTTP/1.1
@@ -14,11 +14,11 @@ POST {{baseEndpoint}}/products HTTP/1.1
 content-type: application/json
 
 {
-  "productName": "Sport tennis Ball",
-  "productUrl": "ball/100",
-  "model": "Tennis",
-  "price": 19.00,
-  "code": "000"
+  "productName": "BasketBall black",
+  "productUrl": "ball/300",
+  "model": "BasketBall",
+  "price": 39.00,
+  "code": "400"
 }
 
 
