@@ -85,6 +85,28 @@ class ProductsRepository {
     if (!result.Attributes) return "Cannot update product"
     return result.Attributes as Product
   }
+
+  async getProductsByIds(ids: string[]): Promise<Product[]> {
+
+    type ArrayKeysID = Array<{ "id": { S: string }}>
+    const keysArr: ArrayKeysID = []
+
+    ids.forEach((id: string) => {
+      keysArr.push({ "id": { S: id }})
+    })
+
+    const params: DocumentClient.BatchGetItemInput = {
+      RequestItems: {
+        [this.tableName]: {
+          Keys: keysArr,
+        }
+      }
+    }
+
+    const result = await this.client.batchGet(params).promise()
+    if (result.Responses === undefined) return []
+    return result.Responses[this.tableName] as Product[]
+  }
 }
 
 export default ProductsRepository

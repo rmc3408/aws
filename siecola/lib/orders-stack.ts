@@ -1,0 +1,66 @@
+import { Stack, StackProps, Duration, RemovalPolicy } from 'aws-cdk-lib';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
+import { Construct } from 'constructs';
+import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import { LayerVersion, Tracing, LambdaInsightsVersion, Runtime } from 'aws-cdk-lib/aws-lambda';
+
+interface OrderStackProps extends StackProps {
+  productsDatabase: Table
+}
+
+class OrderStack extends Stack {
+  public readonly ordersfetchHandler: NodejsFunction;
+  public readonly ordersDatabase: Table
+
+  constructor(scope: Construct, id: string, props: OrderStackProps) {
+    super(scope, id, props)
+    
+    // Import Order Layer access from AWS SSM and connect to Layer to NodeJsFunction
+    const orderLayerArnValue = StringParameter.valueForStringParameter(this, 'OrderParameterArn')
+    const layerConnectedValueOrders = LayerVersion.fromLayerVersionArn(this, 'OrderLayer-Stack', orderLayerArnValue)
+
+    // Import Product Layer access from AWS SSM and connect to Layer to NodeJsFunction
+    const productsArnValue = StringParameter.valueForStringParameter(this, 'ProductsParameterArn')
+    const layerConnectedValueProducts = LayerVersion.fromLayerVersionArn(this, 'ProductsLayer-Stack', productsArnValue);
+
+    // Create DynamoDB Table
+    this.ordersDatabase = new Table(this, 'OrdersDB-Stack', {
+      tableName: "orders",
+      removalPolicy: RemovalPolicy.DESTROY,
+      partitionKey: { name: 'pk', type: AttributeType.STRING },
+      sortKey: { name: 'sk', type: AttributeType.STRING },
+      billingMode:  BillingMode.PROVISIONED,
+      readCapacity: 1,
+      writeCapacity: 1,
+    })
+
+
+    // Lambda Function for GET methods for Orders - All
+    this.ordersfetchHandler = new NodejsFunction(this, "OrdersFetchFunction-Stack", {
+      functionName: 'ordersFetchFunction',
+      handler: "ordersFetchHandler",
+      tracing: Tracing.ACTIVE,
+      runtime: Runtime.NODEJS_16_X,
+      insightsVersion: LambdaInsightsVersion.VERSION_1_0_135_0,
+      memorySize: 128,
+      timeout: Duration.seconds(2),
+      entry: "lambda/orders/fetch.ts",
+      bundling: {
+        minify: true,
+        sourceMap: false,
+      },
+      environment: {
+        ORDERS_DB: this.ordersDatabase.tableName,
+        PRODUCTS_DB: props.productsDatabase.tableName
+      },
+      layers: [layerConnectedValueOrders, layerConnectedValueProducts] //connect Lambda to Lambda
+    })
+
+    // Grant READ access from function return data to database
+    this.ordersDatabase.grantReadWriteData(this.ordersfetchHandler)
+    props.productsDatabase.grantReadData(this.ordersfetchHandler)
+  }
+}
+
+export default OrderStack;

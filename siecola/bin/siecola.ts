@@ -5,6 +5,8 @@ import ApiGatewayStack from '../lib/api-stack';
 import ProductsStack from '../lib/products-stack';
 import ProductsLayersStack from '../lib/products-layer';
 import EventProductsStack from '../lib/event-product-stack';
+import OrderLayersStack from '../lib/order-layer';
+import OrderStack from '../lib/orders-stack';
 
 
 const app = new cdk.App();
@@ -17,20 +19,38 @@ const myAwsEnv: cdk.Environment = {
   account: '631766433992',
 };
 
-const productsLayerStackCreated = new ProductsLayersStack(app, 'ProductsLayer-App', { env: myAwsEnv }) //Layer with share code between lambdas
-const productEventStack = new EventProductsStack(app, 'EventsProduct-App');
-const productsStackCreated = new ProductsStack(app, 'ProductsLambda-App', { eventDatabase: productEventStack.productsEventDatabase, env: myAwsEnv })
-productsStackCreated.addDependency(productsLayerStackCreated);
-productsStackCreated.addDependency(productEventStack);
+//Layers with share code between lambdas
+const productsLayer = new ProductsLayersStack(app, 'ProductsLayer-App', { env: myAwsEnv }) 
+const ordersLayer = new OrderLayersStack(app, 'OrderLayer-App', { env: myAwsEnv })
 
-const ApiGatewayStackCreated = new ApiGatewayStack(app, 'ApiGateway-App', { 
-  productsFetch: productsStackCreated.productsfetchHandler,
-  productsAdmin: productsStackCreated.productsAdminHandler,
+
+// Products Stacks
+const productEvent = new EventProductsStack(app, 'EventsProduct-App');
+const products = new ProductsStack(app, 'Products-App', { eventDatabase: productEvent.productsEventDatabase, env: myAwsEnv })
+products.addDependency(productsLayer);
+products.addDependency(productEvent);
+
+
+// Orders Stacks
+const orders = new OrderStack(app, 'Order-App', { productsDatabase: products.productsDatabase, env: myAwsEnv })
+orders.addDependency(ordersLayer)
+orders.addDependency(products)
+
+
+// REST API Gatewat Stacks
+const apiGateway = new ApiGatewayStack(app, 'ApiGateway-App', { 
+  productsFetch: products.productsfetchHandler,
+  productsAdmin: products.productsAdminHandler,
+  ordersFetch: orders.ordersfetchHandler,
   env: myAwsEnv
 });
-ApiGatewayStackCreated.addDependency(productsStackCreated) // certify products will be used as Dependency.
+apiGateway.addDependency(products)
+apiGateway.addDependency(orders) 
 
-cdk.Tags.of(productsStackCreated).add('Team', 'Ecommerce-Products')
-cdk.Tags.of(ApiGatewayStackCreated).add('Team', 'Ecommerce-API')
 
+// tags for billing purproses
+cdk.Tags.of(products).add('Ecommerce-Products', 'UdemySiecola')
+cdk.Tags.of(orders).add('Ecommerce-Orders', 'UdemySiecola')
+cdk.Tags.of(apiGateway).add('Ecommerce-API', 'UdemySiecola')
+cdk.Tags.of(productEvent).add('Ecommerce-Events', 'UdemySiecola')
 

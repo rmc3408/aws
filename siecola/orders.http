@@ -1,0 +1,26 @@
+@baseEndpoint = https://svaqz3hv00.execute-api.us-east-1.amazonaws.com/prod
+@email = HARD@code.com
+@orderId = ac42fc49-2426-4add-bdcb-e3d3f2a0bc08
+
+### GET All Order
+GET {{baseEndpoint}}/orders HTTP/1.1
+
+
+### GET All Product by Email client
+GET {{baseEndpoint}}/orders?email={{email}} HTTP/1.1
+
+
+### GET 1 Order by Email and order ID
+GET {{baseEndpoint}}/orders?email={{email}}&orderId={{orderId}} HTTP/1.1
+
+
+### POST - Create an Order
+POST {{baseEndpoint}}/orders HTTP/1.1
+content-type: application/json
+
+{
+}
+
+
+### DELETE - Remove an Order 
+DELETE {{baseEndpoint}}/orders?email={{email}}&orderId={{orderId}} HTTP/1.1

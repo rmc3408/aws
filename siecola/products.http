@@ -1,5 +1,5 @@
-@baseEndpoint = https://7tqko16m7h.execute-api.us-east-1.amazonaws.com/prod
-@productId = 021781d3-3251-4ae9-949c-cb2bab1d2eaa
+@baseEndpoint = https://svaqz3hv00.execute-api.us-east-1.amazonaws.com/prod
+@productId = a05874e6-4ac1-4147-89a6-75cb3cb4eb2e
 
 ### GET All Products
 GET {{baseEndpoint}}/products HTTP/1.1

@@ -20,7 +20,7 @@ class ProductsStack extends Stack {
     super(scope, id, props)
 
     // Create of Dynamo DB Table
-    this.productsDatabase = new Table(this, 'ProductsDB', {
+    this.productsDatabase = new Table(this, 'ProductsDB-Stack', {
       tableName: "products",
       removalPolicy: RemovalPolicy.DESTROY,
       partitionKey: { name: 'id', type: AttributeType.STRING },
@@ -32,15 +32,15 @@ class ProductsStack extends Stack {
 
     // Get Layer Value from AWS SSM and connect to Product Layer Stack
     const productsArnValue = StringParameter.valueForStringParameter(this, 'ProductsParameterArn')
-    const layerConnectedValueProducts = LayerVersion.fromLayerVersionArn(this, 'ProductsLayer', productsArnValue);
+    const layerConnectedValueProducts = LayerVersion.fromLayerVersionArn(this, 'ProductsLayer-Stack', productsArnValue);
 
     // Get Layer Value from AWS SSM and connect to Product Layer Stack
     const productsEventArnValue = StringParameter.valueForStringParameter(this, 'ProductEventsParameterArn')
-    const layerConnectedValueProductEvents = LayerVersion.fromLayerVersionArn(this, 'ProductEventsLayer', productsEventArnValue);
+    const layerConnectedValueProductEvents = LayerVersion.fromLayerVersionArn(this, 'ProductEventsLayer-Stack', productsEventArnValue);
 
 
     // Lambda Function for Events Products
-    this.productsEventHandler = new NodejsFunction(this, "ProductsEventFunction", {
+    this.productsEventHandler = new NodejsFunction(this, "ProductsEventFunction-Stack", {
       functionName: 'productsEventFunction',
       runtime: Runtime.NODEJS_16_X,
       entry: "lambda/products/event.ts",
@@ -60,7 +60,7 @@ class ProductsStack extends Stack {
     })
 
     // Lambda Function for GET products - All or One
-    this.productsfetchHandler = new NodejsFunction(this, "ProductsFetchFunctionStack", {
+    this.productsfetchHandler = new NodejsFunction(this, "ProductsFetchFunction-Stack", {
       functionName: 'productsFetchFunction',
       handler: "productsFetchHandler",
       tracing: Tracing.ACTIVE,
@@ -80,7 +80,7 @@ class ProductsStack extends Stack {
     })
 
     // Lambda Function for CREATE, UPDATE and DELETE products - All or One
-    this.productsAdminHandler = new NodejsFunction(this, "ProductsAdminFunctionStack", {
+    this.productsAdminHandler = new NodejsFunction(this, "ProductsAdminFunction-Stack", {
       functionName: 'productsAdminFunction',
       handler: "productsAdminHandler",
       runtime: Runtime.NODEJS_16_X,

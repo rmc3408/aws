@@ -4,6 +4,7 @@ import { EventProductTableType, ProductEvent } from "/opt/node/productEventsLaye
 import { captureAWS } from 'aws-xray-sdk'
 captureAWS(require('aws-sdk'));
 
+
 const eventDB_ENV = process.env.EVENT_DB!
 const dynamoDBClient = new DynamoDB.DocumentClient();
 
@@ -11,10 +12,9 @@ export async function productsEventHandler(event: ProductEvent, context: Context
 
   console.log(event, context.awsRequestId);
   const data = await createEvent(event)
-
   callback(null, JSON.stringify({ productCreated: true, data: data, message: 'OK' }))
-
 }
+
 
 async function createEvent(event: ProductEvent) {
 
