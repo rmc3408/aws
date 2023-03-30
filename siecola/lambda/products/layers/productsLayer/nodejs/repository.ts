@@ -88,11 +88,11 @@ class ProductsRepository {
 
   async getProductsByIds(ids: string[]): Promise<Product[]> {
 
-    type ArrayKeysID = Array<{ "id": { S: string }}>
+    type ArrayKeysID = Array<{ "id": string }>
     const keysArr: ArrayKeysID = []
 
     ids.forEach((id: string) => {
-      keysArr.push({ "id": { S: id }})
+      keysArr.push({ "id": id })
     })
 
     const params: DocumentClient.BatchGetItemInput = {

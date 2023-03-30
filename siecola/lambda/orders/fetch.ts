@@ -1,8 +1,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import ProductsRepository from '/opt/node/productsLayer';
 import { DynamoDB } from 'aws-sdk';
 import { captureAWS } from 'aws-xray-sdk';
-import OrdersRepository, { Order } from '/opt/node/orderLayer';
+import { v4 as uuid } from 'uuid';
+import OrdersRepository from '/opt/node/orderLayer';
+import ProductsRepository, { Product } from '/opt/node/productsLayer';
+import { OrderProduct, OrderDatabase, OrderRequest, OrderResponse } from '/opt/node/orderModelsLayer';
 
 // This process is executed only once during Initialization of Function in NODEJS.
 captureAWS(require('aws-sdk'));
@@ -59,18 +61,28 @@ export async function ordersFetchHandler(event: APIGatewayProxyEvent, ctx: Conte
   if (event.httpMethod == 'POST') {
     console.log('Create Order');
 
-    const newProduct: Order = {
-      products: [{ code: '300', price: 12 }, { code: '400', price: 12 } ],
-      billing: { payment: 'CASH', totalPrice: 20 },
-      shipping: { type: 'URGENT', carrier: 'FEDEX' },
-    };
-    const result = await ordersRepositoryInstance.createOrder(newProduct);
+    const preOrder: OrderRequest = JSON.parse(event.body!)
+    const products = await productsRepositoryInstance.getProductsByIds(preOrder.productIds)
+
+    // Check if size is same, user not mistake product IDS.
+    if (products.length !== preOrder.productIds.length) {
+      return {
+        statusCode: 404,
+        headers: {},
+        body: JSON.stringify({ message: `Some wrong productId listed`, data: products }),
+      };
+    }
+
+    //Build Order Request to Save
+    const order = buildOrder(preOrder, products)
+    const result = await ordersRepositoryInstance.createOrder(order);
+    const displayOrderResponse = sendOrderResponse(result)
 
     return {
-      statusCode: 200,
+      statusCode: 201,
       headers: {},
-      body: JSON.stringify({ message: `Creating product`, data: result }),
-    };
+      body: JSON.stringify({ message: `Creating product in Database`, data: displayOrderResponse }),
+    }
   }
 
   if (event.httpMethod == 'DELETE') {
@@ -93,4 +105,42 @@ export async function ordersFetchHandler(event: APIGatewayProxyEvent, ctx: Conte
     headers: {},
     body: JSON.stringify({ message: 'no products found in this endpoint' }),
   };
+}
+
+function buildOrder(request: OrderRequest, products: Product[]): OrderDatabase {
+
+  let newProductList: OrderProduct[] = []
+  let total = 0
+  products.forEach((prod) => {
+    total += prod.price
+    newProductList.push({
+      code: prod.code,
+      price: prod.price
+    })
+  })
+  const orderToSave: OrderDatabase = {
+    pk: request.email,
+    sk: uuid(),
+    createdAt: Date.now(),
+    email: request.email,
+    billing: {
+      payment: request.payment,
+      totalPrice: total
+    },
+    shipping: request.shipping,
+    products: newProductList
+  }
+  return orderToSave
+}
+
+function sendOrderResponse(order: OrderDatabase): OrderResponse {
+  const convertOrder: OrderResponse = {
+    email: order.pk,
+    id: order.sk,
+    shipping: order.shipping,
+    billing: order.billing,
+    createdAt: order.createdAt,
+    products: order.products
+  }
+  return convertOrder
 }

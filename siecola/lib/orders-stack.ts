@@ -18,11 +18,16 @@ class OrderStack extends Stack {
     
     // Import Order Layer access from AWS SSM and connect to Layer to NodeJsFunction
     const orderLayerArnValue = StringParameter.valueForStringParameter(this, 'OrderParameterArn')
-    const layerConnectedValueOrders = LayerVersion.fromLayerVersionArn(this, 'OrderLayer-Stack', orderLayerArnValue)
+    const ordersARNlayer = LayerVersion.fromLayerVersionArn(this, 'OrderLayer-Stack', orderLayerArnValue)
 
     // Import Product Layer access from AWS SSM and connect to Layer to NodeJsFunction
     const productsArnValue = StringParameter.valueForStringParameter(this, 'ProductsParameterArn')
-    const layerConnectedValueProducts = LayerVersion.fromLayerVersionArn(this, 'ProductsLayer-Stack', productsArnValue);
+    const productsARNLayer = LayerVersion.fromLayerVersionArn(this, 'ProductsLayer-Stack', productsArnValue);
+
+    // Import Orders Models Layer access from AWS SSM and connect to Layer to NodeJsFunction
+    const orderModelsArnValue = StringParameter.valueForStringParameter(this, 'OrderModelsParameterArn')
+    const orderModelsARNLayer = LayerVersion.fromLayerVersionArn(this, 'OrderModelsLambdaLayerArn-Stack', orderModelsArnValue);
+
 
     // Create DynamoDB Table
     this.ordersDatabase = new Table(this, 'OrdersDB-Stack', {
@@ -54,7 +59,7 @@ class OrderStack extends Stack {
         ORDERS_DB: this.ordersDatabase.tableName,
         PRODUCTS_DB: props.productsDatabase.tableName
       },
-      layers: [layerConnectedValueOrders, layerConnectedValueProducts] //connect Lambda to Lambda
+      layers: [ordersARNlayer, productsARNLayer, orderModelsARNLayer]
     })
 
     // Grant READ access from function return data to database
