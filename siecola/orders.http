@@ -1,6 +1,6 @@
 @baseEndpoint = https://svaqz3hv00.execute-api.us-east-1.amazonaws.com/prod
-@email = alex@mls.com
-@orderId = 6086fcb2-8210-48fd-928c-21c320f24453
+@email = john@gmail.com
+@orderId = 5d40c465-2ec7-447e-b635-c9fe82636ab7
 
 ### GET All Order
 GET {{baseEndpoint}}/orders HTTP/1.1
@@ -28,12 +28,12 @@ content-type: application/json
 #   }
 # }
 {
-  "email": "alex@mls.com",
+  "email": "john@gmail.com",
   "productIds": ["a05874e6-4ac1-4147-89a6-75cb3cb4eb2e"],
-  "payment": "CREDIT",
+  "payment": "DEBIT",
   "shipping": {
     "type": "URGENT",
-    "carrier": "FEDEX"
+    "carrier": "UPS"
   }
 }
 

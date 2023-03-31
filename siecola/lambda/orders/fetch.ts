@@ -1,23 +1,29 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { DynamoDB } from 'aws-sdk';
+import { DynamoDB, SNS } from 'aws-sdk';
 import { captureAWS } from 'aws-xray-sdk';
 import { v4 as uuid } from 'uuid';
 import OrdersRepository from '/opt/node/orderLayer';
 import ProductsRepository, { Product } from '/opt/node/productsLayer';
 import { OrderProduct, OrderDatabase, OrderRequest, OrderResponse } from '/opt/node/orderModelsLayer';
+import { Envelope, OrderEvent, OrderEventType } from '/opt/node/orderEventLayer';
 
 // This process is executed only once during Initialization of Function in NODEJS.
 captureAWS(require('aws-sdk'));
 
 const ordersTableNameEnviroment = process.env.ORDERS_DB!;
 const productsTableNameEnviroment = process.env.PRODUCTS_DB!;
+const orderTopicARN = process.env.TOPIC_ORDER!;
+
 const dynamoDBClient = new DynamoDB.DocumentClient();
 const ordersRepositoryInstance = new OrdersRepository(dynamoDBClient, ordersTableNameEnviroment);
 const productsRepositoryInstance = new ProductsRepository(dynamoDBClient, productsTableNameEnviroment);
 
+const snsClient = new SNS();
+
 
 export async function ordersFetchHandler(event: APIGatewayProxyEvent, ctx: Context): Promise<APIGatewayProxyResult> {
-  
+  const lambdaReqId = ctx.awsRequestId;
+
   if (event.httpMethod == 'GET' && event.resource == '/orders' && event.queryStringParameters == null) {
     console.log('Get All Orders');
     // GET - '/orders'
@@ -75,13 +81,14 @@ export async function ordersFetchHandler(event: APIGatewayProxyEvent, ctx: Conte
 
     //Build Order Request to Save
     const order = buildOrder(preOrder, products)
-    const result = await ordersRepositoryInstance.createOrder(order);
-    const displayOrderResponse = sendOrderResponse(result)
+    const orderCreated = await ordersRepositoryInstance.createOrder(order);
+    const eventCreated = await sendOrderEvent(order, OrderEventType.CREATED, lambdaReqId)
+    const displayOrderResponse = sendOrderResponse(orderCreated)
 
     return {
       statusCode: 201,
       headers: {},
-      body: JSON.stringify({ message: `Creating product in Database`, data: displayOrderResponse }),
+      body: JSON.stringify({ message: `Creating product in Database`, data: displayOrderResponse, msgId: eventCreated.MessageId }),
     }
   }
 
@@ -91,11 +98,12 @@ export async function ordersFetchHandler(event: APIGatewayProxyEvent, ctx: Conte
     const orderId = event.queryStringParameters!.orderId;
 
     if (email && orderId) {
-      const result = await ordersRepositoryInstance.deleteOrder(email, orderId);
+      const orderDeleted = await ordersRepositoryInstance.deleteOrder(email, orderId);
+      const eventCreated = await sendOrderEvent(orderDeleted, OrderEventType.DELETED, lambdaReqId)
       return {
         statusCode: 200,
         headers: {},
-        body: JSON.stringify({ message: `Deleting order`, data: result }),
+        body: JSON.stringify({ message: `Deleting order`, data: orderDeleted, msgId: eventCreated.MessageId }),
       };
     }
   }
@@ -106,6 +114,7 @@ export async function ordersFetchHandler(event: APIGatewayProxyEvent, ctx: Conte
     body: JSON.stringify({ message: 'no products found in this endpoint' }),
   };
 }
+
 
 function buildOrder(request: OrderRequest, products: Product[]): OrderDatabase {
 
@@ -143,4 +152,25 @@ function sendOrderResponse(order: OrderDatabase): OrderResponse {
     products: order.products
   }
   return convertOrder
+}
+
+async function sendOrderEvent(order: OrderDatabase, eventType: OrderEventType, awsReqId: string) {
+  const listCode: string[] = []
+  order.products.forEach(prod => listCode.push(prod.code))
+
+  const messageEnvelope: Envelope = {
+    eventType,
+    data: {
+      email: order.pk,
+      orderId: order.sk,
+      shipping: order.shipping,
+      billing: order.billing,
+      productCode: listCode,
+      requestId: awsReqId,
+    }
+  }
+  return await snsClient.publish({
+    TopicArn: orderTopicARN,
+    Message: JSON.stringify(messageEnvelope)
+  }).promise()
 }

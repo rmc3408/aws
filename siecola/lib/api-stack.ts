@@ -1,4 +1,4 @@
-import { LambdaIntegration, LogGroupLogDestination, MethodLoggingLevel, RequestValidator, RestApi } from 'aws-cdk-lib/aws-apigateway';
+import { JsonSchemaType, LambdaIntegration, LogGroupLogDestination, MethodLoggingLevel, Model, RequestValidator, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodeJS';
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
@@ -57,7 +57,29 @@ class ApiGatewayStack extends Stack {
       },
     });
     // POST - '/orders'
-    ordersResource.addMethod('POST', orderFecthIntegrated);
+    const postValidator = new RequestValidator(this, "order-body-validator-post-stack", {
+      restApi: api,
+      requestValidatorName: "order-body-validator-post",
+      validateRequestBody: true,
+    })
+    const postModel = new Model(this, 'orderModelPost-stack', {
+      modelName: 'ordermodelpost',
+      restApi: api,
+      schema: {
+        type: JsonSchemaType.OBJECT,
+        properties: {
+          email: { type: JsonSchemaType.STRING },
+          productIds: { type: JsonSchemaType.ARRAY, minItems: 1 },
+          payment: { type: JsonSchemaType.STRING, enum: ["CASH", "DEBIT", "CREDIT" ]},
+        },
+        required: ["email", "productIds", "payment"]
+      },
+      
+    })
+    ordersResource.addMethod('POST', orderFecthIntegrated, {
+      requestValidator: postValidator,
+      requestModels: { "application/json": postModel },
+    });
   }
 
 
@@ -70,8 +92,33 @@ class ApiGatewayStack extends Stack {
 
     // GET - '/products'
     productsResource.addMethod('GET', productsFetchIntegrated);
+    
     // POST - '/products/'
-    productsResource.addMethod('POST', productsAdminIntegrated);
+    const postValidator = new RequestValidator(this, "product-body-validator-post-stack", {
+      restApi: api,
+      requestValidatorName: "product-body-validator-post",
+      validateRequestBody: true,
+    })
+    const postProductModel = new Model(this, "productModelPost-stack", {
+      restApi: api,
+      contentType: "application/json",
+      modelName: "productmodelpost",
+      schema: {
+        type: JsonSchemaType.OBJECT,
+        properties: {
+          productName: { type: JsonSchemaType.STRING },
+          productUrl: { type: JsonSchemaType.STRING },
+          model: { type: JsonSchemaType.STRING },
+          code: { type: JsonSchemaType.STRING, minLength: 3 },
+          price: { type: JsonSchemaType.NUMBER },
+        },
+        required: ["code", "productName"]
+      }
+    })
+    productsResource.addMethod('POST', productsAdminIntegrated, {
+      requestValidator: postValidator,
+      requestModels: { "application/json": postProductModel },
+    });
 
     const productIdResource = productsResource.addResource('{id}');
     // GET - '/products/{id}'

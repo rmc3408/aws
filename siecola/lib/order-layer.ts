@@ -6,6 +6,7 @@ import { StringParameter } from "aws-cdk-lib/aws-ssm"
 class OrderLayersStack extends Stack {
    readonly orderLayer: LayerVersion
    readonly orderModelsLayer: LayerVersion
+   readonly orderEventLayer: LayerVersion
 
    constructor(scope: Construct, id: string, props?: StackProps) {
       super(scope, id, props)
@@ -30,6 +31,17 @@ class OrderLayersStack extends Stack {
       new StringParameter(this, "OrderModelsLambdaLayerArn-Stack", {
          parameterName: "OrderModelsParameterArn",
          stringValue: this.orderModelsLayer.layerVersionArn
+      })
+
+      this.orderEventLayer = new LayerVersion(this, "OrderEventLayer-Stack", {
+         code: Code.fromAsset('lambda/orders/layers/orderLayer'),
+         compatibleRuntimes: [Runtime.NODEJS_16_X],
+         layerVersionName: "OrderEventLayer",
+         removalPolicy: RemovalPolicy.DESTROY
+      })
+      new StringParameter(this, "OrderEventLambdaLayerArn-Stack", {
+         parameterName: "OrderEventParameterArn",
+         stringValue: this.orderEventLayer.layerVersionArn
       })
    }
 }

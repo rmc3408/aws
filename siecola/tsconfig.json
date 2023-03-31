@@ -28,6 +28,7 @@
       "/opt/node/productEventsLayer": ["lambda/products/layers/productEventLayer/nodejs/event-repo"],
       "/opt/node/orderLayer": ["lambda/orders/layers/orderLayer/nodejs/repository"],
       "/opt/node/orderModelsLayer": ["lambda/orders/layers/orderLayer/nodejs/models"],
+      "/opt/node/orderEventLayer": ["lambda/orders/layers/orderLayer/nodejs/event"],
     }
   },
   "exclude": [

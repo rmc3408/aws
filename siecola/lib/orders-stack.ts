@@ -3,7 +3,10 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import { Topic } from 'aws-cdk-lib/aws-sns';
+import { LambdaSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 import { LayerVersion, Tracing, LambdaInsightsVersion, Runtime } from 'aws-cdk-lib/aws-lambda';
+
 
 interface OrderStackProps extends StackProps {
   productsDatabase: Table
@@ -12,6 +15,7 @@ interface OrderStackProps extends StackProps {
 class OrderStack extends Stack {
   public readonly ordersfetchHandler: NodejsFunction;
   public readonly ordersDatabase: Table
+  public readonly orderTopic: Topic
 
   constructor(scope: Construct, id: string, props: OrderStackProps) {
     super(scope, id, props)
@@ -28,6 +32,9 @@ class OrderStack extends Stack {
     const orderModelsArnValue = StringParameter.valueForStringParameter(this, 'OrderModelsParameterArn')
     const orderModelsARNLayer = LayerVersion.fromLayerVersionArn(this, 'OrderModelsLambdaLayerArn-Stack', orderModelsArnValue);
 
+    // Import Orders Event Layer access from AWS SSM and connect to Layer to NodeJsFunction
+    const orderEventArnValue = StringParameter.valueForStringParameter(this, 'OrderEventParameterArn')
+    const orderEventARNLayer = LayerVersion.fromLayerVersionArn(this, 'OrderEventLambdaLayerArn-Stack', orderEventArnValue);
 
     // Create DynamoDB Table
     this.ordersDatabase = new Table(this, 'OrdersDB-Stack', {
@@ -40,6 +47,10 @@ class OrderStack extends Stack {
       writeCapacity: 1,
     })
 
+    this.orderTopic = new Topic(this, "OrderSNS-Stack", {
+      displayName: "Order Topic",
+      topicName: "ordertopic"
+    })
 
     // Lambda Function for GET methods for Orders - All
     this.ordersfetchHandler = new NodejsFunction(this, "OrdersFetchFunction-Stack", {
@@ -57,14 +68,16 @@ class OrderStack extends Stack {
       },
       environment: {
         ORDERS_DB: this.ordersDatabase.tableName,
-        PRODUCTS_DB: props.productsDatabase.tableName
+        PRODUCTS_DB: props.productsDatabase.tableName,
+        TOPIC_ORDER: this.orderTopic.topicArn
       },
-      layers: [ordersARNlayer, productsARNLayer, orderModelsARNLayer]
+      layers: [ordersARNlayer, productsARNLayer, orderModelsARNLayer, orderEventARNLayer]
     })
 
     // Grant READ access from function return data to database
     this.ordersDatabase.grantReadWriteData(this.ordersfetchHandler)
     props.productsDatabase.grantReadData(this.ordersfetchHandler)
+    this.orderTopic.grantPublish(this.ordersfetchHandler)
   }
 }
 

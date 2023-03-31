@@ -69,7 +69,7 @@ class OrdersRepository {
     return order as OrderDatabase
   }
 
-  async deleteOrder(email: string, id: string): Promise<OrderDatabase | string> {
+  async deleteOrder(email: string, id: string): Promise<OrderDatabase> {
     const params: DocumentClient.DeleteItemInput = {
       TableName: this.tableName,
       ReturnValues: 'ALL_OLD',
@@ -80,10 +80,6 @@ class OrdersRepository {
     };
 
     const result = await this.client.delete(params).promise()
-    console.log(result.Attributes)
-    if (result.Attributes === undefined) {
-      return 'Order not found';
-    }
     return result.Attributes as OrderDatabase
   }
 }

@@ -1,5 +1,5 @@
 @baseEndpoint = https://svaqz3hv00.execute-api.us-east-1.amazonaws.com/prod
-@productId = a05874e6-4ac1-4147-89a6-75cb3cb4eb2e
+@productId = 3eae23c6-59aa-4686-bfe0-68f7af8fe1b2
 
 ### GET All Products
 GET {{baseEndpoint}}/products HTTP/1.1
@@ -14,11 +14,11 @@ POST {{baseEndpoint}}/products HTTP/1.1
 content-type: application/json
 
 {
-  "productName": "BasketBall black",
-  "productUrl": "ball/300",
-  "model": "BasketBall",
-  "price": 39.00,
-  "code": "400"
+  "productName": "Tennis Racket",
+  
+  "model": "Tennis",
+  "price": 70.00,
+  "code": "500"
 }
 
 
