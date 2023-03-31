@@ -24,11 +24,12 @@
     ],
     "baseUrl": "./",
     "paths": {
-      "/opt/node/productsLayer": ["lambda/products/layers/productsLayer/nodejs/repository"],
-      "/opt/node/productEventsLayer": ["lambda/products/layers/productEventLayer/nodejs/event-repo"],
-      "/opt/node/orderLayer": ["lambda/orders/layers/orderLayer/nodejs/repository"],
-      "/opt/node/orderModelsLayer": ["lambda/orders/layers/orderLayer/nodejs/models"],
-      "/opt/node/orderEventLayer": ["lambda/orders/layers/orderLayer/nodejs/event"],
+      "/opt/node/productsLayer": ["lambda/products/layers/productsLayer/nodejs/product-repository"],
+      "/opt/node/productEventsLayer": ["lambda/products/layers/productEventLayer/nodejs/event-models"],
+      "/opt/node/orderLayer": ["lambda/orders/layers/orderLayer/nodejs/order-repository"],
+      "/opt/node/orderModelsLayer": ["lambda/orders/layers/orderLayer/nodejs/order-models"],
+      "/opt/node/orderEventLayer": ["lambda/orders/layers/orderLayer/nodejs/event-models"],
+      "/opt/node/orderEventRepositoryLayer": ["lambda/orders/layers/orderLayer/nodejs/event-repository"],
     }
   },
   "exclude": [

@@ -5,7 +5,7 @@ import { v4 as uuid } from 'uuid';
 import OrdersRepository from '/opt/node/orderLayer';
 import ProductsRepository, { Product } from '/opt/node/productsLayer';
 import { OrderProduct, OrderDatabase, OrderRequest, OrderResponse } from '/opt/node/orderModelsLayer';
-import { Envelope, OrderEvent, OrderEventType } from '/opt/node/orderEventLayer';
+import { Envelope, OrderEventType } from '/opt/node/orderEventLayer';
 
 // This process is executed only once during Initialization of Function in NODEJS.
 captureAWS(require('aws-sdk'));
@@ -83,6 +83,7 @@ export async function ordersFetchHandler(event: APIGatewayProxyEvent, ctx: Conte
     const order = buildOrder(preOrder, products)
     const orderCreated = await ordersRepositoryInstance.createOrder(order);
     const eventCreated = await sendOrderEvent(order, OrderEventType.CREATED, lambdaReqId)
+    console.log('LAMBDA - FROM API GATEWAY TO SNS = MESSAGE ID', eventCreated.MessageId)
     const displayOrderResponse = sendOrderResponse(orderCreated)
 
     return {

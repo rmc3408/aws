@@ -1,5 +1,5 @@
 @baseEndpoint = https://svaqz3hv00.execute-api.us-east-1.amazonaws.com/prod
-@productId = 3eae23c6-59aa-4686-bfe0-68f7af8fe1b2
+@productId = 8e5d9405-712a-4710-b8b1-97a091c1865f
 
 ### GET All Products
 GET {{baseEndpoint}}/products HTTP/1.1
@@ -14,11 +14,11 @@ POST {{baseEndpoint}}/products HTTP/1.1
 content-type: application/json
 
 {
-  "productName": "Tennis Racket",
-  
-  "model": "Tennis",
-  "price": 70.00,
-  "code": "500"
+  "productName": "computer iMac Pro",
+  "productUrl": "computer/1100",
+  "model": "Apple",
+  "price": 1700.00,
+  "code": "900"
 }
 
 

@@ -83,6 +83,6 @@ function sendProductEvent(product: Product, type: ProductEventTypeEnum, reqId: s
   return lambdaClient.invoke({
     FunctionName: lambdafunctionNameENV,
     Payload: JSON.stringify(event),
-    InvocationType: "Event" // for Syncronous reponse  use "RequestResponse",
+    InvocationType: "Event" // for Syncronous response  use "RequestResponse",
   }).promise()
 }

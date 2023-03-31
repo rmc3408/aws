@@ -32,8 +32,13 @@ products.addDependency(productEvent);
 
 
 // Orders Stacks
-const orders = new OrderStack(app, 'Order-App', { productsDatabase: products.productsDatabase, env: myAwsEnv })
+const orders = new OrderStack(app, 'Order-App', { 
+  productsDatabase: products.productsDatabase,
+  eventDatabase: productEvent.productsEventDatabase,
+  env: myAwsEnv
+ })
 orders.addDependency(ordersLayer)
+orders.addDependency(productEvent)
 orders.addDependency(products)
 
 

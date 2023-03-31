@@ -42,3 +42,20 @@ export interface Envelope {
   eventType: OrderEventType,
   data: OrderEvent
 }
+
+type OrderEventInfo = {
+  orderId: string
+  messageId: string
+  productCodes: Array<string>
+}
+
+export interface OrderEventDatabase {
+  pk: string
+  sk: string
+  email: string
+  createdAt: number
+  requestId: string
+  eventType: OrderEventType
+  info: OrderEventInfo
+  ttl: number
+}
