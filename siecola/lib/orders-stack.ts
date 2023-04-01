@@ -3,10 +3,11 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
-import { Topic } from 'aws-cdk-lib/aws-sns';
-import { LambdaSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
+import { SubscriptionFilter, Topic } from 'aws-cdk-lib/aws-sns';
+import { LambdaSubscription, LambdaSubscriptionProps } from 'aws-cdk-lib/aws-sns-subscriptions';
 import { LayerVersion, Tracing, LambdaInsightsVersion, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { OrderEventType } from '/opt/node/orderEventLayer';
 
 
 
@@ -18,6 +19,7 @@ interface OrderStackProps extends StackProps {
 class OrderStack extends Stack {
   public readonly ordersfetchHandler: NodejsFunction;
   public readonly eventsHandler: NodejsFunction;
+  public readonly billingHandler: NodejsFunction;
   public readonly ordersDatabase: Table;
   public readonly orderTopic: Topic;
 
@@ -119,12 +121,17 @@ class OrderStack extends Stack {
       layers: [orderEventARNLayer, orderEventRepositoryARNLayer],
     });
 
-    
-    // Grant access from function return data to database
-    this.ordersDatabase.grantReadWriteData(this.ordersfetchHandler);
-    props.productsDatabase.grantReadData(this.ordersfetchHandler);
-    this.orderTopic.grantPublish(this.ordersfetchHandler);
-    this.orderTopic.addSubscription(new LambdaSubscription(this.eventsHandler));
+     // Lambda Function to Billing new Order events
+     this.billingHandler = new NodejsFunction(this, 'BillingFunction-Stack', {
+      functionName: 'orderBillingFunction',
+      handler: 'eventsBillHandler',
+      tracing: Tracing.ACTIVE,
+      runtime: Runtime.NODEJS_16_X,
+      insightsVersion: LambdaInsightsVersion.VERSION_1_0_135_0,
+      memorySize: 128,
+      timeout: Duration.seconds(2),
+      entry: 'lambda/orders/bill.ts',
+    });
 
     // Instead give more permission --> props.eventDatabase.grantWriteData(this.eventsHandler)
     //This method below is more restrict to give a specific operations in the database
@@ -134,6 +141,20 @@ class OrderStack extends Stack {
       resources: [props.eventDatabase.tableArn],
     });
     this.eventsHandler.addToRolePolicy(eventPolicy);
+    
+    const BillingFilterSubscription: LambdaSubscriptionProps = {
+      filterPolicy: {
+        eventType: SubscriptionFilter.stringFilter({ allowlist: [OrderEventType.CREATED]})
+      }
+    }
+    this.orderTopic.addSubscription(new LambdaSubscription(this.eventsHandler));
+    this.orderTopic.addSubscription(new LambdaSubscription(this.billingHandler, BillingFilterSubscription));
+
+
+    // Grant access from function return data to database
+    this.ordersDatabase.grantReadWriteData(this.ordersfetchHandler);
+    props.productsDatabase.grantReadData(this.ordersfetchHandler);
+    this.orderTopic.grantPublish(this.ordersfetchHandler);    
   }
 }
 

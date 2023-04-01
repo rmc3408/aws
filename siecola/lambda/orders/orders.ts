@@ -172,6 +172,9 @@ async function sendOrderEvent(order: OrderDatabase, eventType: OrderEventType, a
   }
   return await snsClient.publish({
     TopicArn: orderTopicARN,
-    Message: JSON.stringify(messageEnvelope)
+    Message: JSON.stringify(messageEnvelope),
+    MessageAttributes: { // adding custom new atributte.
+      eventType: { DataType: "String", StringValue: eventType }
+    }
   }).promise()
 }
