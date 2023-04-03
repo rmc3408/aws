@@ -71,7 +71,6 @@ class OrderStack extends Stack {
     // Create Simple Queue Service - SQS
     this.orderQueue = new Queue(this, 'OrderSQS-Stack', {
       queueName: 'orderQueue',
-      fifo: true,
       deadLetterQueue: {
         maxReceiveCount: 2, 
         queue: new Queue(this, 'OrderDLQ-Stack', {
