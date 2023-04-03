@@ -83,7 +83,7 @@ export async function ordersFetchHandler(event: APIGatewayProxyEvent, ctx: Conte
     const order = buildOrder(preOrder, products)
     const orderCreated = await ordersRepositoryInstance.createOrder(order);
     const eventCreated = await sendOrderEvent(order, OrderEventType.CREATED, lambdaReqId)
-    console.log('LAMBDA - FROM API GATEWAY TO SNS = MESSAGE ID', eventCreated.MessageId)
+    console.log('LAMBDA - FROM API GATEWAY TO PUBLISH IN SNS = MESSAGE ID', eventCreated.MessageId)
     const displayOrderResponse = sendOrderResponse(orderCreated)
 
     return {

@@ -1,7 +1,6 @@
-import { Context, SNSEvent, SNSEventRecord, SNSMessage } from 'aws-lambda';
-import { DynamoDB, SNS } from 'aws-sdk';
+import { Context, SNSEvent, SNSMessage } from 'aws-lambda';
+import { DynamoDB } from 'aws-sdk';
 import { captureAWS } from 'aws-xray-sdk';
-import { v4 as uuid } from 'uuid';
 import { Envelope, OrderEventDatabase } from '/opt/node/orderEventLayer';
 import OrderEventRepository from '/opt/node/orderEventRepositoryLayer';
 

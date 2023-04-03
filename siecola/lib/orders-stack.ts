@@ -4,10 +4,11 @@ import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import { SubscriptionFilter, Topic } from 'aws-cdk-lib/aws-sns';
-import { LambdaSubscription, LambdaSubscriptionProps } from 'aws-cdk-lib/aws-sns-subscriptions';
+import { LambdaSubscription, LambdaSubscriptionProps, SqsSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 import { LayerVersion, Tracing, LambdaInsightsVersion, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
-import { OrderEventType } from '/opt/node/orderEventLayer';
+import { Queue } from 'aws-cdk-lib/aws-sqs';
+import { SqsEventSource, SqsEventSourceProps } from 'aws-cdk-lib/aws-lambda-event-sources';
 
 
 
@@ -20,8 +21,10 @@ class OrderStack extends Stack {
   public readonly ordersfetchHandler: NodejsFunction;
   public readonly eventsHandler: NodejsFunction;
   public readonly billingHandler: NodejsFunction;
+  public readonly emailEventsHandler: NodejsFunction;
   public readonly ordersDatabase: Table;
   public readonly orderTopic: Topic;
+  public readonly orderQueue: Queue;
 
   constructor(scope: Construct, id: string, props: OrderStackProps) {
     super(scope, id, props);
@@ -36,31 +39,17 @@ class OrderStack extends Stack {
 
     // Import Orders Models Layer access from AWS SSM and connect to Layer to NodeJsFunction
     const orderModelsArnValue = StringParameter.valueForStringParameter(this, 'OrderModelsParameterArn');
-    const orderModelsARNLayer = LayerVersion.fromLayerVersionArn(
-      this,
-      'OrderModelsLambdaLayerArn-Stack',
-      orderModelsArnValue
-    );
+    const orderModelsARNLayer = LayerVersion.fromLayerVersionArn(this, 'OrderModelsLambdaLayerArn-Stack', orderModelsArnValue);
 
     // Import Orders Event Layer access from AWS SSM and connect to Layer to NodeJsFunction
     const orderEventArnValue = StringParameter.valueForStringParameter(this, 'OrderEventParameterArn');
-    const orderEventARNLayer = LayerVersion.fromLayerVersionArn(
-      this,
-      'OrderEventLambdaLayerArn-Stack',
-      orderEventArnValue
-    );
+    const orderEventARNLayer = LayerVersion.fromLayerVersionArn(this, 'OrderEventLambdaLayerArn-Stack', orderEventArnValue);
 
 
     // Import Orders Event Repository Layer access from AWS SSM and connect to Layer to NodeJsFunction
-    const orderEventRepositoryArnValue = StringParameter.valueForStringParameter(
-      this,
-      'OrderEventRepositoryParameterArn'
-    );
-    const orderEventRepositoryARNLayer = LayerVersion.fromLayerVersionArn(
-      this,
-      'OrderEventRepositoryLambdaLayerArn-Stack',
-      orderEventRepositoryArnValue
-    );
+    const orderEventRepositoryArnValue = StringParameter.valueForStringParameter(this, 'OrderEventRepositoryParameterArn');
+    const orderEventRepositoryARNLayer = LayerVersion.fromLayerVersionArn(this, 'OrderEventRepositoryLambdaLayerArn-Stack', orderEventRepositoryArnValue);
+
 
     // Create DynamoDB Table
     this.ordersDatabase = new Table(this, 'OrdersDB-Stack', {
@@ -73,11 +62,25 @@ class OrderStack extends Stack {
       writeCapacity: 1,
     });
 
-    // Create Notification System Service
+
+    // Create Simple Notification Service - SNS
     this.orderTopic = new Topic(this, 'OrderSNS-Stack', {
       displayName: 'Order Topic',
       topicName: 'ordertopic',
     });
+    // Create Simple Queue Service - SQS
+    this.orderQueue = new Queue(this, 'OrderSQS-Stack', {
+      queueName: 'orderQueue',
+      fifo: true,
+      deadLetterQueue: {
+        maxReceiveCount: 2, 
+        queue: new Queue(this, 'OrderDLQ-Stack', {
+          queueName: 'orderQueueDLQ',
+          retentionPeriod: Duration.days(10),
+        })
+      }
+    });
+
 
     // Lambda Function for Create, Delete and Fetch data for Orders database
     this.ordersfetchHandler = new NodejsFunction(this, 'OrdersFetchFunction-Stack', {
@@ -121,17 +124,39 @@ class OrderStack extends Stack {
       layers: [orderEventARNLayer, orderEventRepositoryARNLayer],
     });
 
-     // Lambda Function to Billing new Order events
-     this.billingHandler = new NodejsFunction(this, 'BillingFunction-Stack', {
+    // Lambda Function to Billing from SNS filtered events in Order events
+    this.billingHandler = new NodejsFunction(this, 'BillingFunction-Stack', {
       functionName: 'orderBillingFunction',
       handler: 'eventsBillHandler',
       tracing: Tracing.ACTIVE,
       runtime: Runtime.NODEJS_16_X,
       insightsVersion: LambdaInsightsVersion.VERSION_1_0_135_0,
       memorySize: 128,
+      bundling: {
+        minify: true,
+        sourceMap: false,
+      },
       timeout: Duration.seconds(2),
       entry: 'lambda/orders/bill.ts',
     });
+
+    // Lambda Function to batch Email from Queue in Order events
+    this.emailEventsHandler = new NodejsFunction(this, 'emailEventsFunction-Stack', {
+      functionName: 'orderEmailsFunction',
+      handler: 'eventsEmailHandler',
+      tracing: Tracing.ACTIVE,
+      runtime: Runtime.NODEJS_16_X,
+      insightsVersion: LambdaInsightsVersion.VERSION_1_0_135_0,
+      memorySize: 128,
+      bundling: {
+        minify: true,
+        sourceMap: false,
+      },
+      timeout: Duration.seconds(2),
+      entry: 'lambda/orders/emails.ts',
+      layers: [orderEventARNLayer]
+    });
+
 
     // Instead give more permission --> props.eventDatabase.grantWriteData(this.eventsHandler)
     //This method below is more restrict to give a specific operations in the database
@@ -142,19 +167,39 @@ class OrderStack extends Stack {
     });
     this.eventsHandler.addToRolePolicy(eventPolicy);
     
-    const BillingFilterSubscription: LambdaSubscriptionProps = {
+    const filterSubscription: LambdaSubscriptionProps = {
       filterPolicy: {
-        eventType: SubscriptionFilter.stringFilter({ allowlist: [OrderEventType.CREATED]})
+        eventType: SubscriptionFilter.stringFilter({ allowlist: ["ORDER_CREATED"]})
       }
     }
-    this.orderTopic.addSubscription(new LambdaSubscription(this.eventsHandler));
-    this.orderTopic.addSubscription(new LambdaSubscription(this.billingHandler, BillingFilterSubscription));
 
+    // Publish (invoking) or Subscription (action) in SNS
+    this.orderTopic.grantPublish(this.ordersfetchHandler);
+
+    this.orderTopic.addSubscription(new LambdaSubscription(this.eventsHandler));
+
+    // SNS topic can filter which ORDER will subscription
+    this.orderTopic.addSubscription(new LambdaSubscription(this.billingHandler, filterSubscription));
+    // From SNS topic subscribe new SQS
+    this.orderTopic.addSubscription(new SqsSubscription(this.orderQueue, filterSubscription)); 
+
+    //
+    const conditionSQS: SqsEventSourceProps = {
+      batchSize: 3,
+      enabled: true,
+      maxBatchingWindow: Duration.minutes(1),
+      reportBatchItemFailures: true,
+    }
+    // SQS will have configurable events to send to emailHandler lambda function 
+    this.emailEventsHandler.addEventSource(new SqsEventSource(this.orderQueue, conditionSQS))
+    // Grant lambda function to consume Message from SQS Queue
+    this.orderQueue.grantConsumeMessages(this.emailEventsHandler); 
+    
 
     // Grant access from function return data to database
     this.ordersDatabase.grantReadWriteData(this.ordersfetchHandler);
     props.productsDatabase.grantReadData(this.ordersfetchHandler);
-    this.orderTopic.grantPublish(this.ordersfetchHandler);    
+       
   }
 }
 

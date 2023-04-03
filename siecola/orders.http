@@ -1,6 +1,6 @@
 @baseEndpoint = https://svaqz3hv00.execute-api.us-east-1.amazonaws.com/prod
 @email = alex@mls.com
-@orderId = db0a9597-78fc-4fb1-bd21-0971d97035c1
+@orderId = 38aa7f42-a7f2-43e9-bfd2-4b83f2c565ea
 
 ### GET All Order
 GET {{baseEndpoint}}/orders HTTP/1.1
