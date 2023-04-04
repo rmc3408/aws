@@ -35,17 +35,17 @@ export interface OrderDatabase {
   createdAt: number;
   shipping: Shipping;
   billing: Billing;
-  products: Array<OrderProduct>;
+  products?: Array<OrderProduct>;
   email: string;
 }
 
 export interface OrderResponse {
   createdAt: number;
   id: string;
-  shipping: Shipping;
-  billing: Billing;
+  shipping?: Shipping;
+  billing?: Billing;
   email: string;
-  products: Array<OrderProduct>;
+  products?: Array<OrderProduct>;
 }
 
 export interface OrderRequest {

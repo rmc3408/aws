@@ -24,9 +24,7 @@ class ProductsStack extends Stack {
       tableName: "products",
       removalPolicy: RemovalPolicy.DESTROY,
       partitionKey: { name: 'id', type: AttributeType.STRING },
-      billingMode:  BillingMode.PROVISIONED,
-      readCapacity: 1,
-      writeCapacity: 1,
+      billingMode:  BillingMode.PAY_PER_REQUEST,
     })
 
 

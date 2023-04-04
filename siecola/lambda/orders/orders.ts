@@ -54,7 +54,7 @@ export async function ordersFetchHandler(event: APIGatewayProxyEvent, ctx: Conte
     if (email && !orderId) {
       // GET - '/orders?email=alex@gmail.com'
       console.log('Get All Orders by Email');
-      const result = await ordersRepositoryInstance.getOrderByEmail(email);
+      const result: Omit<OrderResponse, 'shipping' | 'products' | 'billing' >[] = await ordersRepositoryInstance.getOrderByEmail(email);
 
       return {
         statusCode: 200,
@@ -157,7 +157,7 @@ function sendOrderResponse(order: OrderDatabase): OrderResponse {
 
 async function sendOrderEvent(order: OrderDatabase, eventType: OrderEventType, awsReqId: string) {
   const listCode: string[] = []
-  order.products.forEach(prod => listCode.push(prod.code))
+  order.products?.forEach(prod => listCode.push(prod.code))
 
   const messageEnvelope: Envelope = {
     eventType,

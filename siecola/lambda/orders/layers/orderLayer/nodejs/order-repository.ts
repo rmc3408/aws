@@ -26,6 +26,7 @@ class OrdersRepository {
       ExpressionAttributeValues: {
         ':email': email,
       },
+      ProjectionExpression: "pk, sk, createdAt",
     };
     const result = await this.client.query(params).promise();
 
@@ -43,7 +44,7 @@ class OrdersRepository {
       },
     };
     const result = await this.client.query(params).promise();
-    return result.Items as OrderResponse[];
+    return result.Items as Omit<OrderResponse, 'shipping' | 'products' | 'billing' >[];
   }
 
   async getOneOrder(email: string, id: string): Promise<OrderResponse> {
