@@ -1,5 +1,5 @@
 import { JsonSchemaType, LambdaIntegration, LogGroupLogDestination, MethodLoggingLevel, Model, RequestValidator, RestApi } from 'aws-cdk-lib/aws-apigateway';
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodeJS';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { LogGroup } from 'aws-cdk-lib/aws-logs';
@@ -8,6 +8,7 @@ import { LogGroup } from 'aws-cdk-lib/aws-logs';
 interface ApiGatewayIntegrationProps extends StackProps {
   productsFetch: NodejsFunction;
   productsAdmin: NodejsFunction;
+  eventsFetch: NodejsFunction;
   ordersFetch: NodejsFunction;
 }
 
@@ -31,7 +32,29 @@ class ApiGatewayStack extends Stack {
     // Create Resources and Methods for lambda function
     this.createProductService(props, api);
     this.createOrderServices(props, api);
+    this.createEventsServices(props, api);
   }
+
+
+  private createEventsServices(props: Pick<ApiGatewayIntegrationProps, 'eventsFetch'>, api: RestApi) {
+    const eventsFetchIntegrated = new LambdaIntegration(props.eventsFetch);
+
+    // GET - '/events?email=alex@gmail.com'
+    // GET - '/event?email=alex@gmail.com&eventType=CREATED'
+    const ordersResource = api.root.addResource('events')
+    ordersResource.addMethod('GET', eventsFetchIntegrated, {
+      requestValidator: new RequestValidator(this, "body-validator-fetch-event-stack", {
+        restApi: api,
+        requestValidatorName: "body-validator-fetch",
+        validateRequestParameters: true,
+      }),
+      requestParameters: { 
+        "method.request.querystring.email": true, 
+        "method.request.querystring.eventType": false,
+      },
+    })
+  }
+
 
 
   private createOrderServices(props: Pick<ApiGatewayIntegrationProps, 'ordersFetch'>, api: RestApi) {

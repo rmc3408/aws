@@ -19,6 +19,7 @@ interface OrderStackProps extends StackProps {
 
 class OrderStack extends Stack {
   public readonly ordersfetchHandler: NodejsFunction;
+  public readonly eventsFetchHandler: NodejsFunction;
   public readonly eventsHandler: NodejsFunction;
   public readonly billingHandler: NodejsFunction;
   public readonly emailEventsHandler: NodejsFunction;
@@ -102,6 +103,25 @@ class OrderStack extends Stack {
       layers: [ordersARNlayer, productsARNLayer, orderModelsARNLayer, orderEventARNLayer],
     });
 
+    // Lambda Function for Fetch data for Events database
+    this.eventsFetchHandler = new NodejsFunction(this, 'EventsFetchFunction-Stack', {
+      functionName: 'eventsFetchFunction',
+      handler: 'eventsFetchHandler',
+      tracing: Tracing.ACTIVE,
+      runtime: Runtime.NODEJS_16_X,
+      memorySize: 128,
+      timeout: Duration.seconds(2),
+      entry: 'lambda/orders/fetch.ts',
+      bundling: {
+        minify: true,
+        sourceMap: false,
+      },
+      environment: {
+        ORDER_EVENTS_DATABASE: props.eventDatabase.tableName,
+      },
+      layers: [orderEventRepositoryARNLayer, orderEventARNLayer],
+    });
+
     // Lambda Function to Create new events in Event Database
     this.eventsHandler = new NodejsFunction(this, 'OrdersEventFunction-Stack', {
       functionName: 'orderEventsFunction',
@@ -182,6 +202,12 @@ class OrderStack extends Stack {
     });
     this.emailEventsHandler.addToRolePolicy(mailPolicy);
 
+    const eventFetchPolicy = new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: [ 'dynamodb:Query' ],
+      resources: [`${props.eventDatabase.tableArn}/index/emailIndex`],
+    });
+    this.eventsFetchHandler.addToRolePolicy(eventFetchPolicy);
 
     // Publish (invoking) or Subscription (action) in SNS
     this.orderTopic.grantPublish(this.ordersfetchHandler);

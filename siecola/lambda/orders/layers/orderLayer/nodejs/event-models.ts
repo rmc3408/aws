@@ -1,6 +1,6 @@
 export enum OrderEventType {
   CREATED = "ORDER_CREATED",
-  DELETED = "ORDER_DELELED"
+  DELETED = "ORDER_DELETED"
 }
 
 enum PaymentEnumType {

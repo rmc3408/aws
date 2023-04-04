@@ -1,0 +1,11 @@
+@baseEndpoint = https://ulk4upbahc.execute-api.us-east-1.amazonaws.com/prod
+@email = john@azure.com
+@type = ORDER_DELELED
+
+
+### GET All Product by Email client
+GET {{baseEndpoint}}/events?email={{email}} HTTP/1.1
+
+
+### GET 1 Order by Email and EVENT TYPE
+GET {{baseEndpoint}}/events?email={{email}}&eventType={{type}} HTTP/1.1

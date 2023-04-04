@@ -47,6 +47,7 @@ const apiGateway = new ApiGatewayStack(app, 'ApiGateway-App', {
   productsFetch: products.productsfetchHandler,
   productsAdmin: products.productsAdminHandler,
   ordersFetch: orders.ordersfetchHandler,
+  eventsFetch: orders.eventsFetchHandler,
   env: myAwsEnv
 });
 apiGateway.addDependency(products)

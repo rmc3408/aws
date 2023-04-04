@@ -1,5 +1,5 @@
 import { Stack, RemovalPolicy, StackProps, Duration } from 'aws-cdk-lib';
-import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
+import { Table, AttributeType, BillingMode, ProjectionType } from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 
 
@@ -36,6 +36,15 @@ class EventProductsStack extends Stack {
       targetUtilizationPercent: 30,
       scaleInCooldown: Duration.seconds(60),
       scaleOutCooldown: Duration.seconds(60)
+    })
+
+    this.productsEventDatabase.addGlobalSecondaryIndex({
+      indexName: 'emailIndex',
+      partitionKey: { name: 'email', type: AttributeType.STRING },
+      sortKey: { name: 'sk', type: AttributeType.STRING },
+      // projectionType: ProjectionType.INCLUDE,
+      // nonKeyAttributes: ["info", "createdAt"],
+      projectionType: ProjectionType.ALL
     })
   }
 }

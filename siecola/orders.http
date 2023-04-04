@@ -1,6 +1,6 @@
 @baseEndpoint = https://ulk4upbahc.execute-api.us-east-1.amazonaws.com/prod
 @email = john@azure.com
-@orderId = 44571ea2-18ef-46b1-bdf6-dd6d5e372985
+@orderId = ecb6b57e-202c-48be-8f19-0e5c39d25ab6
 
 ### GET All Order
 GET {{baseEndpoint}}/orders HTTP/1.1
