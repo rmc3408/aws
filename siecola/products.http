@@ -1,4 +1,4 @@
-@baseEndpoint = https://svaqz3hv00.execute-api.us-east-1.amazonaws.com/prod
+@baseEndpoint = https://ulk4upbahc.execute-api.us-east-1.amazonaws.com/prod
 @productId = 8e5d9405-712a-4710-b8b1-97a091c1865f
 
 ### GET All Products

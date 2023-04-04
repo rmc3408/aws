@@ -45,7 +45,6 @@ class OrderStack extends Stack {
     const orderEventArnValue = StringParameter.valueForStringParameter(this, 'OrderEventParameterArn');
     const orderEventARNLayer = LayerVersion.fromLayerVersionArn(this, 'OrderEventLambdaLayerArn-Stack', orderEventArnValue);
 
-
     // Import Orders Event Repository Layer access from AWS SSM and connect to Layer to NodeJsFunction
     const orderEventRepositoryArnValue = StringParameter.valueForStringParameter(this, 'OrderEventRepositoryParameterArn');
     const orderEventRepositoryARNLayer = LayerVersion.fromLayerVersionArn(this, 'OrderEventRepositoryLambdaLayerArn-Stack', orderEventRepositoryArnValue);
@@ -171,6 +170,18 @@ class OrderStack extends Stack {
         eventType: SubscriptionFilter.stringFilter({ allowlist: ["ORDER_CREATED"]})
       }
     }
+
+    const mailPolicy = new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: [
+        'ses:SendEmail',
+        'ses:SendRawEmail',
+        'ses:SendTemplatedEmail',
+      ],
+      resources: ["*"],
+    });
+    this.emailEventsHandler.addToRolePolicy(mailPolicy);
+
 
     // Publish (invoking) or Subscription (action) in SNS
     this.orderTopic.grantPublish(this.ordersfetchHandler);

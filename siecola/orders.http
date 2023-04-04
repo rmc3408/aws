@@ -1,6 +1,6 @@
-@baseEndpoint = https://svaqz3hv00.execute-api.us-east-1.amazonaws.com/prod
-@email = alex@mls.com
-@orderId = 33de77b9-8344-4b47-8b86-c4d7c295a30e
+@baseEndpoint = https://ulk4upbahc.execute-api.us-east-1.amazonaws.com/prod
+@email = john@azure.com
+@orderId = 44571ea2-18ef-46b1-bdf6-dd6d5e372985
 
 ### GET All Order
 GET {{baseEndpoint}}/orders HTTP/1.1
@@ -20,7 +20,7 @@ content-type: application/json
 
 {
   "email": "john@azure.com",
-  "productIds": ["fcf38ae0-2ca1-44d7-9748-5cab59c37e23"],
+  "productIds": ["94010c24-8502-4b5b-a66c-c2a24ddf9b49"],
   "payment": "DEBIT",
   "shipping": {
     "type": "URGENT",
