@@ -1,0 +1,139 @@
+org: rmc3408
+app: gateway
+service: complete-coding
+
+frameworkVersion: '2 || 3'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+  profile: complete-coding
+  region: ca-central-1
+  environment:
+    tableName: ${self:custom.tableName}
+    bucketName: ${self:custom.bucketName}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:*
+        - s3:*
+        - ses:*
+      Resource: "*"
+  apiGateway:
+    apiKeys:
+      - free:
+          - myFreeKey
+      - paid:
+          - myPaidKey
+    usagePlan:
+      - free:
+          quota:
+            limit: 100
+            period: MONTH
+          throttle:
+            rateLimit: 20
+            burstLimit: 100
+      - paid:
+          quota:
+            limit: 500
+            period: MONTH
+          throttle:
+            rateLimit: 50
+            burstLimit: 200
+
+functions:
+  getUser:
+    handler: lambdas/endpoints/getUser.user
+    events:
+      - http:
+          path: get-user/{ID}
+          method: GET
+          cors: true
+          private: true
+  getUserJob:
+    handler: lambdas/endpoints/getUserJob.user
+    events:
+      - http:
+          path: get-job/{ID}
+          method: GET
+          cors: true
+  createUserJob:
+    handler: lambdas/endpoints/createPlayerJob.user
+    events:
+      - http:
+          path: assign-job/{ID}
+          method: POST
+          cors: true
+  createFile:
+    handler: lambdas/endpoints/createFile.user
+    events:
+      - http:
+          path: save-file/{fileName}
+          method: POST
+          cors: true
+  getFile:
+    handler: lambdas/endpoints/getFile.user
+    events:
+      - http:
+          path: read-file/{fileName}
+          method: GET
+          cors: true
+  sendEmail:
+    handler: lambdas/endpoints/sendEmail.handler
+    events:
+      - http:
+          path: send-email
+          method: POST
+          cors: true
+  proxy:
+    handler: lambdas/endpoints/proxy.handler
+    events:
+      - http:
+          path: chuck/{proxy+}
+          method: ANY
+          integration: http-proxy
+          cors: true
+          request:
+            uri: http://api.icndb.com/{proxy}
+            parameters:
+              paths:
+                proxy: true
+
+resources:
+  Resources:
+    S3CompleteCoding:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.bucketName}
+    MyCompleteTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.tableName}
+        AttributeDefinitions:
+          - AttributeName: ID
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ID
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 3
+          WriteCapacityUnits: 3
+
+plugins:
+  - serverless-s3-sync
+  - serverless-webpack
+
+package:
+  individually: true
+
+custom:
+  s3Sync:
+    - bucketName: ${self:custom.bucketName}
+      localDir: upload
+  webpack:
+    webpackConfig: "webpack.config.js" # Name of webpack configuration file
+    includeModules: false # Node modules configuration for packaging
+    packager: "npm" # Packager that will be used to package your external modules
+  tableName: usersTable
+  bucketName: my-space-s3

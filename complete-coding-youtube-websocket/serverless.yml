@@ -1,0 +1,59 @@
+org: rmc3408
+app: socket-complete-coding
+service: socket
+
+frameworkVersion: '2 || 3'
+
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+  profile: complete-coding
+  region: ca-central-1
+  environment:
+    tableName: ${self:custom.tableName}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:*
+      Resource: '*'
+
+custom:
+  tableName: websocketTable22
+
+functions:
+  ws-connect:
+    handler: websocket/connect.ws
+    events:
+      - websocket:
+          route: $connect
+  ws-disconnect:
+    handler: websocket/disconnect.ws
+    events:
+      - websocket:
+          route: $disconnect
+  ws-message:
+    handler: websocket/message.ws
+    events:
+      - websocket:
+          route: message
+  ws-default:
+    handler: websocket/default.ws
+    events:
+      - websocket:
+          route: $default
+
+resources:
+  Resources:
+    WebSocketTable2:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.tableName}
+        AttributeDefinitions:
+          - AttributeName: connectionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: connectionId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
