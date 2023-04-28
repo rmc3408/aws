@@ -8,7 +8,7 @@ import EventProductsStack from '../lib/event-product-stack';
 import OrderLayersStack from '../lib/order-layer';
 import OrderStack from '../lib/orders-stack';
 import WebSocketApiStack from '../lib/web-socket-stack';
-
+import InvoiceLayersStack from '../lib/invoice-layer';
 
 const app = new cdk.App();
 
@@ -56,8 +56,9 @@ apiGateway.addDependency(orders)
 
 
 // Web Socket Stack
-const webSocket = new WebSocketApiStack(app, 'Ecommerce-WebsocketApi', {})
-
+const invoiceLayers = new InvoiceLayersStack(app, 'InvoiceLayer-App')
+const webSocket = new WebSocketApiStack(app, 'WebsocketApi-App', {})
+webSocket.addDependency(invoiceLayers)
 
 // tags for billing purproses
 cdk.Tags.of(products).add('Ecommerce-Products', 'UdemySiecola')

@@ -13,6 +13,7 @@ import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb'
 
 import { WebSocketApi, WebSocketStage } from '@aws-cdk/aws-apigatewayv2-alpha'
 import { WebSocketLambdaIntegration } from '@aws-cdk/aws-apigatewayv2-integrations-alpha'
+import { StringParameter } from 'aws-cdk-lib/aws-ssm'
 
 
 export default class WebSocketApiStack extends Stack {
@@ -27,6 +28,20 @@ export default class WebSocketApiStack extends Stack {
 
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props)
+
+    // Layers
+    // Import Transaction Repository access from AWS SSM and Import to Layer to NodeJsFunction
+    const repoLayerArnValue = StringParameter.valueForStringParameter(this, 'RepoParameterArn');
+    const repoARNlayer = LayerVersion.fromLayerVersionArn(this, 'TransactionRepositoryLayer-Stack', repoLayerArnValue);
+
+    // Import Transaction CRUD methods from AWS SSM and Import to Layer to NodeJsFunction
+    const crudLayerArnValue = StringParameter.valueForStringParameter(this, 'CRUDParameterArn');
+    const crudARNlayer = LayerVersion.fromLayerVersionArn(this, 'CRUDTransactionsLayer-Stack', crudLayerArnValue)
+
+    // Import Websocket methods from AWS SSM and Import to Layer to NodeJsFunction
+    const websocketLayerArnValue = StringParameter.valueForStringParameter(this, 'WebSocketParameterArn');
+    const webSocketARNlayer = LayerVersion.fromLayerVersionArn(this, 'WebSocketLayer-Stack', websocketLayerArnValue);
+
 
     // Create dynamo DB table for invoice transation
     this.transationDatabase = new Table(this, 'TransactionsInvoiceDB-Stack', {
@@ -51,7 +66,7 @@ export default class WebSocketApiStack extends Stack {
 
     // Create S3 bucket
     this.bucket = new Bucket(this, 'Bucket-Stack', {
-      bucketName: 'Invoice-transaction-websocket-bucket',
+      bucketName: 'invoice-transaction-websocket-bucket',
       removalPolicy: RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
       lifecycleRules: [
@@ -137,7 +152,8 @@ export default class WebSocketApiStack extends Stack {
         TRANSACTION_DB_NAME: this.transationDatabase.tableName,
         BUCKET_NAME: this.bucket.bucketName,
         WEBSOCKET_ENDPOINT: this.webSocketApi.apiEndpoint + '/dev'
-      }
+      },
+      layers: [repoARNlayer, webSocketARNlayer]
     })
     //give permission lambda policy to GetItem from DB
     this.getBucketURL.addToRolePolicy(transactionDBPolicy)
@@ -162,7 +178,8 @@ export default class WebSocketApiStack extends Stack {
       environment: {
         TRANSACTION_DB_NAME: this.transationDatabase.tableName,
         WEBSOCKET_ENDPOINT: this.webSocketApi.apiEndpoint + '/dev'
-      }
+      },
+      layers: [repoARNlayer, crudARNlayer, webSocketARNlayer]
     })
     //give permission to lambda function write/read on database
     this.transationDatabase.grantReadWriteData(this.putBucket)
@@ -196,7 +213,8 @@ export default class WebSocketApiStack extends Stack {
       environment: {
         TRANSACTION_DB_NAME: this.transationDatabase.tableName,
         WEBSOCKET_ENDPOINT: this.webSocketApi.apiEndpoint + '/dev'
-      }
+      },
+      layers: [repoARNlayer, webSocketARNlayer]
     })
     const cancelDBPolicy = new PolicyStatement({
       effect: Effect.ALLOW,

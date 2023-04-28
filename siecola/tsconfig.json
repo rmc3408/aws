@@ -30,6 +30,9 @@
       "/opt/node/orderModelsLayer": ["lambda/orders/layers/orderLayer/nodejs/order-models"],
       "/opt/node/orderEventLayer": ["lambda/orders/layers/orderLayer/nodejs/event-models"],
       "/opt/node/orderEventRepositoryLayer": ["lambda/orders/layers/orderLayer/nodejs/event-repository"],
+      "/opt/node/transactionRepositoryLayer": ["lambda/invoices/layers/invoiceLayer/nodejs/repo"],
+      "/opt/node/transactionCrudLayer": ["lambda/invoices/layers/invoiceLayer/nodejs/crud"],
+      "/opt/node/transactionWebScoketLayer": ["lambda/invoices/layers/invoiceLayer/nodejs/websocket"]
     }
   },
   "exclude": [
