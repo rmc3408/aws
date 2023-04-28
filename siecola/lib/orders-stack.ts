@@ -68,6 +68,7 @@ class OrderStack extends Stack {
       displayName: 'Order Topic',
       topicName: 'ordertopic',
     });
+    
     // Create Simple Queue Service - SQS
     this.orderQueue = new Queue(this, 'OrderSQS-Stack', {
       queueName: 'orderQueue',

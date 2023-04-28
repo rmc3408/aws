@@ -1,11 +1,37 @@
 # Welcome to your CDK TypeScript project
 
-This is a blank project for CDK development with TypeScript.
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+### AWS CDK Start Guide
+https://docs.aws.amazon.com/cdk/api/v2/
+https://github.com/aws-samples/aws-cdk-examples
 
-## Useful commands
+### AWS CDK WorkShop Basics
+https://cdkworkshop.com/
 
+### Stack and Constructs
+https://docs.aws.amazon.com/cdk/api/v2/docs/aws-construct-library.html
+https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib-readme.html
+
+### aws-cdk-lib » aws_lambda
+https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_lambda-readme.html
+
+### aws-cdk-lib/aws-lambda-nodejs
+https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_lambda_nodejs-readme.html
+
+### aws-cdk-lib » aws_apigatewayv2
+https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_apigatewayv2-readme.html
+
+### aws-cdk-lib » aws_s3
+https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3-readme.html
+
+### @aws-cdk/aws-apigatewayv2-alpha >> @aws-cdk/aws-apigatewayv2-integrations-alpha
+https://docs.aws.amazon.com/cdk/api/v2/docs/@aws-cdk_aws-apigatewayv2-alpha.WebSocketApi.html
+
+
+
+
+
+#### AWS CDK Commands
 * `npm run build`   compile typescript to js
 * `npm run watch`   watch for changes and compile
 * `npm run test`    perform the jest unit tests
@@ -16,29 +42,8 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * `cdk synth`       emits the synthesized CloudFormation template
 * `cdk destroy`     remove all stacks from CloudFormation template
 
-### if docker showing problem 
+
+### In case of docker showing issue
 ```
 rm  ~/.docker/config.json
 ``` 
-
-# What is AWS CDK?
-
-The AWS CDK, a framework for defining cloud infrastructure in code and provisioning it through AWS CloudFormation and lets you build applications in the cloud with many benefits, including:
-
-- Build with high-level constructs that automatically provide sensible, secure defaults for your AWS resources, defining more infrastructure with less code.
-
-- Use programming idioms like parameters, conditionals, loops, composition, and inheritance to model your system design from building blocks provided by AWS and others.
-
-- Put your infrastructure, application code, and configuration all in one place, ensuring that at every milestone you have a complete, cloud-deployable system.
-
-- Employ software engineering practices such as code reviews, unit tests, and source control to make your infrastructure more robust.
-
-- Connect your AWS resources together (even across stacks) and grant permissions using simple, intent-oriented APIs.
-
-- Import existing AWS CloudFormation templates to give your resources a CDK API.
-
-- Use the power of AWS CloudFormation to perform infrastructure deployments predictably and repeatedly, with rollback on error.
-
-- Easily share infrastructure design patterns among teams within your organization or even with the public.
-
-![aws cdk](./AppStacks.png)
