@@ -32,11 +32,11 @@ export default class WebSocketApiStack extends Stack {
     // Layers
     // Import Transaction Repository access from AWS SSM and Import to Layer to NodeJsFunction
     const repoLayerArnValue = StringParameter.valueForStringParameter(this, 'RepoParameterArn');
-    const repoARNlayer = LayerVersion.fromLayerVersionArn(this, 'TransactionRepositoryLayer-Stack', repoLayerArnValue);
+    const transactionARNlayer = LayerVersion.fromLayerVersionArn(this, 'TransactionRepositoryLayer-Stack', repoLayerArnValue);
 
-    // Import Transaction CRUD methods from AWS SSM and Import to Layer to NodeJsFunction
-    const crudLayerArnValue = StringParameter.valueForStringParameter(this, 'CRUDParameterArn');
-    const crudARNlayer = LayerVersion.fromLayerVersionArn(this, 'CRUDTransactionsLayer-Stack', crudLayerArnValue)
+    // Import Invoice Repository access from AWS SSM and Import to Layer to NodeJsFunction
+    const invoiceLayerArnValue = StringParameter.valueForStringParameter(this, 'invoiceParameterArn');
+    const invoiceARNlayer = LayerVersion.fromLayerVersionArn(this, 'InvoiceLayer-Stack', invoiceLayerArnValue)
 
     // Import Websocket methods from AWS SSM and Import to Layer to NodeJsFunction
     const websocketLayerArnValue = StringParameter.valueForStringParameter(this, 'WebSocketParameterArn');
@@ -72,7 +72,7 @@ export default class WebSocketApiStack extends Stack {
       lifecycleRules: [
         {
           enabled: true,
-          expiration: Duration.days(2),
+          expiration: Duration.days(7),
         },
       ],
     })
@@ -121,7 +121,7 @@ export default class WebSocketApiStack extends Stack {
         integration: new WebSocketLambdaIntegration('DisconnectIntegration', this.disconnectHandler) 
       },
     })
-    new WebSocketStage(this, 'WebSocketStage', { 
+    const stagedWS = new WebSocketStage(this, 'WebSocketStage', { 
       webSocketApi: this.webSocketApi, 
       stageName: 'dev', 
       autoDeploy: true 
@@ -146,9 +146,10 @@ export default class WebSocketApiStack extends Stack {
       environment: {
         TRANSACTION_DB_NAME: this.transationDatabase.tableName,
         BUCKET_NAME: this.bucket.bucketName,
-        WEBSOCKET_ENDPOINT: this.webSocketApi.apiEndpoint + '/dev'
+        WEBSOCKET_ENDPOINT: this.webSocketApi.apiEndpoint + '/dev',
+        WEBSOCKET_URL: stagedWS.url
       },
-      layers: [repoARNlayer, webSocketARNlayer]
+      layers: [transactionARNlayer, webSocketARNlayer]
     })
     //give permission lambda policy to GetItem from DB
     this.getBucketURL.addToRolePolicy(transactionDBPolicy)
@@ -174,7 +175,7 @@ export default class WebSocketApiStack extends Stack {
         TRANSACTION_DB_NAME: this.transationDatabase.tableName,
         WEBSOCKET_ENDPOINT: this.webSocketApi.apiEndpoint + '/dev'
       },
-      layers: [repoARNlayer, crudARNlayer, webSocketARNlayer]
+      layers: [transactionARNlayer, invoiceARNlayer, webSocketARNlayer]
     })
     //give permission to lambda function write/read on database
     this.transationDatabase.grantReadWriteData(this.putBucket)
@@ -209,7 +210,7 @@ export default class WebSocketApiStack extends Stack {
         TRANSACTION_DB_NAME: this.transationDatabase.tableName,
         WEBSOCKET_ENDPOINT: this.webSocketApi.apiEndpoint + '/dev'
       },
-      layers: [repoARNlayer, webSocketARNlayer]
+      layers: [transactionARNlayer, webSocketARNlayer]
     })
     const cancelDBPolicy = new PolicyStatement({
       effect: Effect.ALLOW,

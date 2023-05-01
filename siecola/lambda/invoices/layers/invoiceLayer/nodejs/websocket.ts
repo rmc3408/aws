@@ -24,7 +24,29 @@ export default class InvoiceWebSocket {
       console.log(error)
       return false
     }
-    
-    
+  }
+
+  sendInvoiceStatus(connectionId: string, transactionId: string, status: string) {
+    const data = JSON.stringify({
+      transactionId,
+      status
+    })
+
+    return this.sendData(connectionId, data)
+  }
+
+  async disconnectClient(connectionId: string): Promise<boolean> {
+    try {
+      await this.api.getConnection({ //check connection before
+        ConnectionId: connectionId
+      }).promise()
+
+      await this.api.deleteConnection({ ConnectionId: connectionId }).promise()
+      return true
+    } catch (error) {
+      console.log(error)
+      return false
+    }
+
   }
 }

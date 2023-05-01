@@ -5,7 +5,7 @@ import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 
 class InvoiceLayersStack extends Stack {
   readonly transactionRepo: LayerVersion;
-  readonly crudTransaction: LayerVersion;
+  readonly invoice: LayerVersion;
   readonly webSocket: LayerVersion;
 
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -25,15 +25,15 @@ class InvoiceLayersStack extends Stack {
 
 
     // Invoice Services - CREATE, UPDATE AND DELETE
-    this.crudTransaction = new LayerVersion(this, 'CRUDTransactionsLayer-Stack', {
+    this.invoice = new LayerVersion(this, 'InvoiceLayer-Stack', {
       code: Code.fromAsset('lambda/invoices/layers/invoiceLayer'),
       compatibleRuntimes: [Runtime.NODEJS_16_X],
-      layerVersionName: 'CRUDTransactionLayer',
+      layerVersionName: 'invoiceTransactionLayer',
       removalPolicy: RemovalPolicy.DESTROY,
     });
-    new StringParameter(this, 'CRUDTransactionVersionArn-Stack', {
-      parameterName: 'CRUDParameterArn',
-      stringValue: this.crudTransaction.layerVersionArn,
+    new StringParameter(this, 'InvoiceTransactionVersionArn-Stack', {
+      parameterName: 'invoiceParameterArn',
+      stringValue: this.invoice.layerVersionArn,
     });
     
     

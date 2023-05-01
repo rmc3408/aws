@@ -3,9 +3,9 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda
 
 captureAWS(require('aws-sdk'))
 
-export async function connectionHandler(event: APIGatewayProxyEvent, _ctx: Context): Promise<APIGatewayProxyResult> {
+export async function connectionHandler(_event: APIGatewayProxyEvent, _ctx: Context): Promise<APIGatewayProxyResult> {
 
-  console.log(event)
+  console.log('-----------------> CONNECTED <-----------------------------')
 
   return {
     statusCode: 200,

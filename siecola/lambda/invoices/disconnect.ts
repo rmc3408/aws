@@ -3,9 +3,9 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda
 
 captureAWS(require('aws-sdk'))
 
-export async function disconnectionHandler(event: APIGatewayProxyEvent, _ctx: Context): Promise<APIGatewayProxyResult> {
+export async function disconnectionHandler(_event: APIGatewayProxyEvent, _ctx: Context): Promise<APIGatewayProxyResult> {
 
-  console.log(event)
+  console.log('-----------------> DISCONNECTED <-----------------------------')
 
   return {
     statusCode: 200,
