@@ -16,7 +16,7 @@ const databaseClient = new DynamoDB.DocumentClient()
 const repo = new InvoiceTransactionRepository(databaseClient, TRANSACTION_DB_NAME)
 
 
-const WEBSOCKET_ENDPOINT = process.env.WEBSOCKET_ENDPOINT!.substring(6)
+const WEBSOCKET_ENDPOINT = process.env.WEBSOCKET_ENDPOINT!.substring(6) //remove wss://
 // Alternatives
 // const WS_ENDPOINT = process.env.WEBSOCKET_URL!.substring(6)
 // const WS_ENDPOINT = webSocketClient.config.endpoint
@@ -34,6 +34,7 @@ export async function getHandler(event: APIGatewayProxyEvent, ctx: Context): Pro
   const expirationTime = 60 * 5
   console.log('Also Websocket endpoint from config from client' , webSocketClient.config.endpoint)
 
+
   // Create invoice
   const newTransaction: InvoiceTransaction = {
     pk: '#transaction',
@@ -46,6 +47,7 @@ export async function getHandler(event: APIGatewayProxyEvent, ctx: Context): Pro
     endpoint: WEBSOCKET_ENDPOINT,
     transactionStatus: InvoiceTransactionStatusEnum.GENERATED
   } 
+
 
   // save to database
   await repo.createTransaction(newTransaction)
@@ -64,6 +66,7 @@ export async function getHandler(event: APIGatewayProxyEvent, ctx: Context): Pro
     transactionId: transactionSK
   })
 
+  
   // send back URL to Websocket
   await webSocketServices.sendData(connectionWebsocketId, InvoiceURLdata)  
 

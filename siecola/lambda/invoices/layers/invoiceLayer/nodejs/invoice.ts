@@ -11,9 +11,9 @@ export interface Invoice {
   createdAt: number;
 }
 
-interface InvoiceFile extends Pick<Invoice, 'totalValue' | 'quantity' | 'transactionId'> {
+export interface InvoiceFile extends Pick<Invoice, 'totalValue' | 'quantity' | 'productId'> {
   customerName: string;
-  invoiceNumber: number;
+  invoiceNumber: string;
 }
 
 class InvoiceRepository {
