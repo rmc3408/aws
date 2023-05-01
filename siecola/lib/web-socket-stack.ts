@@ -79,7 +79,7 @@ export default class WebSocketApiStack extends Stack {
     const bucketPolicy = new PolicyStatement({
       effect: Effect.ALLOW,
       actions: ['S3:PutObject'],
-      resources: [ this.bucket.bucketArn + '/*'], // folder and subFolders
+      resources: [ `${this.bucket.bucketArn}/*` ], // folder and subFolders
     })
 
 
@@ -121,19 +121,13 @@ export default class WebSocketApiStack extends Stack {
         integration: new WebSocketLambdaIntegration('DisconnectIntegration', this.disconnectHandler) 
       },
     })
+    new WebSocketStage(this, 'WebSocketStage', { 
+      webSocketApi: this.webSocketApi, 
+      stageName: 'dev', 
+      autoDeploy: true 
+    });
     
-    const stageWSCreated = new WebSocketStage(this, 'WebSocketStage', { webSocketApi: this.webSocketApi, stageName: 'dev', autoDeploy: true });
-    
-    const connectionsArns = this.formatArn({
-      service: 'execute-api',
-      resourceName: `${stageWSCreated.stageName}/POST/*`,
-      resource: this.webSocketApi.apiId,
-    })
-    const webSocketPolicy = new PolicyStatement({
-      effect: Effect.ALLOW,
-      actions: ['execute-api:ManageConnections'],
-      resources: [ connectionsArns ]
-    })
+
 
 
     // Lambda functions - GetURL from Bucket handler
@@ -142,6 +136,7 @@ export default class WebSocketApiStack extends Stack {
       runtime: Runtime.NODEJS_16_X,
       entry: 'lambda/invoices/getBucketUrl.ts',
       handler: 'getHandler',
+      memorySize: 128,
       timeout: Duration.seconds(2),
       tracing: Tracing.ACTIVE,
       bundling: {
@@ -159,8 +154,8 @@ export default class WebSocketApiStack extends Stack {
     this.getBucketURL.addToRolePolicy(transactionDBPolicy)
     //give permission lambda policy to PutObject inside S3
     this.getBucketURL.addToRolePolicy(bucketPolicy)
-    // give permission to lambda acess Database
-    this.getBucketURL.addToRolePolicy(webSocketPolicy) //FIXME
+    // give permission Lambda function to WEB SOCKET
+    this.webSocketApi.grantManageConnections(this.getBucketURL)
 
 
     // Lambda functions - PUT (create and update) handler

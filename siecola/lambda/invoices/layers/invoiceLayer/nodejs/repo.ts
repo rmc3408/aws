@@ -1,8 +1,28 @@
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
-//import { OrderDatabase, OrderResponse } from '/opt/node/orderModelsLayer';
+
+export enum InvoiceTransactionStatusEnum {
+  GENERATED = "URL_CREATED",
+  RECEIVED = 'INVOICE_RECEIVED',
+  PROCESSED = "INVOICE_PROCESSED",
+  TIMEOUT = "TIMEOUT",
+  CANCELLED = "INVOICE_CANCELLED",
+  NON_VALID_INVOICE_NUMBER = 'INVOICE_INVALID'
+}
 
 
-class OrdersRepository {
+export interface InvoiceTransaction {
+  pk: string;
+  sk: string;
+  ttl: number;
+  requestId: string;
+  timestamp: number;
+  expiresIn: number;
+  connectionId: string;
+  endpoint: string;
+  transactionStatus: InvoiceTransactionStatusEnum
+}
+
+class InvoiceRepository {
   private client: DocumentClient;
   private tableName: string;
 
@@ -59,16 +79,16 @@ class OrdersRepository {
   //   return result.Item as OrderResponse; 
   // }
 
-  // async createOrder(order: OrderDatabase): Promise<OrderDatabase> {
+  async createInvoice(invoice: InvoiceTransaction): Promise<InvoiceTransaction> {
     
-  //   const params: DocumentClient.PutItemInput = {
-  //     TableName: this.tableName,
-  //     Item: order,
-  //   };
+    const params: DocumentClient.PutItemInput = {
+      TableName: this.tableName,
+      Item: invoice,
+    };
 
-  //   await this.client.put(params).promise();
-  //   return order as OrderDatabase
-  // }
+    await this.client.put(params).promise();
+    return invoice
+  }
 
   // async deleteOrder(email: string, id: string): Promise<OrderDatabase> {
   //   const params: DocumentClient.DeleteItemInput = {
@@ -85,4 +105,4 @@ class OrdersRepository {
   // }
 }
 
-export default OrdersRepository;
+export default InvoiceRepository;
