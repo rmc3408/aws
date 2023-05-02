@@ -35,19 +35,18 @@ class InvoiceTransactionRepository {
     const params: DocumentClient.UpdateItemInput = {
       TableName: this.tableName,
       Key: {
-        pk: '#transaction',
-        sk: id
-      },
-      ConditionExpression: 'attribute_exist(pk)',
-      UpdateExpression: 'set transactionStatus = :s',
-      ExpressionAttributeValues: {
+        pk: "#transaction",
+        sk: id   
+     },
+     ConditionExpression: 'attribute_exists(pk)',
+     UpdateExpression: 'set transactionStatus = :s',
+     ExpressionAttributeValues: {
         ':s': status
-      }
+     }
     };
     
     try {
-      const result = await this.client.update(params).promise();
-      console.log(result)
+      await this.client.update(params).promise()
       return true
     } catch (ConditionalCheckFailedExpection) {
       console.error('Invoice transaction not found')
