@@ -7,14 +7,22 @@ import { Bucket, EventType } from 'aws-cdk-lib/aws-s3'
 import { LambdaDestination } from 'aws-cdk-lib/aws-s3-notifications'
 
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs'
-import { LayerVersion, Tracing, Runtime } from 'aws-cdk-lib/aws-lambda'
+import { LayerVersion, Tracing, Runtime, StartingPosition } from 'aws-cdk-lib/aws-lambda'
 
-import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb'
+import { Table, AttributeType, BillingMode, StreamViewType } from 'aws-cdk-lib/aws-dynamodb'
 
 import { WebSocketApi, WebSocketStage } from '@aws-cdk/aws-apigatewayv2-alpha'
 import { WebSocketLambdaIntegration } from '@aws-cdk/aws-apigatewayv2-integrations-alpha'
+
 import { StringParameter } from 'aws-cdk-lib/aws-ssm'
 
+import {Queue} from "aws-cdk-lib/aws-sqs"
+import {DynamoEventSource, SqsDlq, SqsEventSourceProps} from "aws-cdk-lib/aws-lambda-event-sources"
+
+
+interface WebSocketApiStackProps extends StackProps {
+  eventDb: Table
+}
 
 export default class WebSocketApiStack extends Stack {
   private readonly transationDatabase: Table
@@ -25,8 +33,9 @@ export default class WebSocketApiStack extends Stack {
   private readonly getBucketURL: NodejsFunction
   private readonly putBucket: NodejsFunction
   private readonly cancelBucket: NodejsFunction
+  private readonly eventInvoice: NodejsFunction
 
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(scope: Construct, id: string, props: WebSocketApiStackProps) {
     super(scope, id, props)
 
     // Layers
@@ -53,6 +62,7 @@ export default class WebSocketApiStack extends Stack {
       billingMode: BillingMode.PROVISIONED,
       writeCapacity: 1,
       readCapacity: 1,
+      stream: StreamViewType.NEW_AND_OLD_IMAGES
     })
     const transactionDBPolicy = new PolicyStatement({
       effect: Effect.ALLOW,
@@ -232,6 +242,60 @@ export default class WebSocketApiStack extends Stack {
 
     this.webSocketApi.addRoute('cancelURL', {
       integration: new WebSocketLambdaIntegration('CancelHandler', this.cancelBucket),
-    });
+    })
+
+    this.eventInvoice = new NodejsFunction(this, 'eventDB-invoice-function-Stack', {
+      functionName: 'eventInvoiceFunction',
+      runtime: Runtime.NODEJS_16_X,
+      entry: 'lambda/invoices/event.ts',
+      handler: 'eventHandler',
+      timeout: Duration.seconds(2),
+      tracing: Tracing.ACTIVE,
+      bundling: {
+        minify: true,
+        sourceMap: false,
+      },
+      environment: {
+        EVENT_DB_NAME: props.eventDb.tableName,
+        WEBSOCKET_ENDPOINT: this.webSocketApi.apiEndpoint + '/dev'
+      },
+      layers: [webSocketARNlayer]
+    })
+    // give permission Lambda function to WEB SOCKET
+    this.webSocketApi.grantManageConnections(this.getBucketURL)
+
+    const eventDBPolicy = new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: ['dynamodb:PutItem'],
+      resources: [ props.eventDb.tableArn ],
+      conditions: {
+        ['ForAllValues:StringLike']: { 'dynamodb:LeadingKeys': ['#invoice_*'] }
+      }
+    })
+    // give permission to Database receive acess from lambda
+    this.eventInvoice.addToRolePolicy(eventDBPolicy)
+
+    // Process stream items from database send to Queue
+    const invoiceQueue = new Queue(this, 'invoiceSQS-Stack', {
+      queueName: 'invoiceQueue',
+      deadLetterQueue: {
+        maxReceiveCount: 10, 
+        queue: new Queue(this, 'InvoiceDLQ-Stack', {
+          queueName: 'invoiceQueueDLQ',
+          retentionPeriod: Duration.days(3),
+        })
+      }
+    })
+
+    // SQS will have configurable events to send to eventInvoice lambda function under conditions
+    this.eventInvoice.addEventSource(new DynamoEventSource(props.eventDb, {
+      startingPosition: StartingPosition.TRIM_HORIZON,
+      batchSize: 3,
+      enabled: true,
+      maxBatchingWindow: Duration.minutes(1),
+      reportBatchItemFailures: true,
+      retryAttempts: 2,
+      onFailure: new SqsDlq(invoiceQueue)
+    }))
   }
 }

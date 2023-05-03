@@ -57,7 +57,8 @@ apiGateway.addDependency(orders)
 
 // Web Socket Stack
 const invoiceLayers = new InvoiceLayersStack(app, 'InvoiceLayer-App')
-const webSocket = new WebSocketApiStack(app, 'WebsocketApi-App', {})
+const webSocket = new WebSocketApiStack(app, 'WebsocketApi-App', { eventDb: productEvent.productsEventDatabase })
+webSocket.addDependency(productEvent)
 webSocket.addDependency(invoiceLayers)
 
 // tags for billing purproses
