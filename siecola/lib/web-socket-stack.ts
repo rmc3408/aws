@@ -244,6 +244,8 @@ export default class WebSocketApiStack extends Stack {
       integration: new WebSocketLambdaIntegration('CancelHandler', this.cancelBucket),
     })
 
+
+    // Events Lambda Function
     this.eventInvoice = new NodejsFunction(this, 'eventDB-invoice-function-Stack', {
       functionName: 'eventInvoiceFunction',
       runtime: Runtime.NODEJS_16_X,
@@ -288,7 +290,7 @@ export default class WebSocketApiStack extends Stack {
     })
 
     // SQS will have configurable events to send to eventInvoice lambda function under conditions
-    this.eventInvoice.addEventSource(new DynamoEventSource(props.eventDb, {
+    this.eventInvoice.addEventSource(new DynamoEventSource(this.transationDatabase, {
       startingPosition: StartingPosition.TRIM_HORIZON,
       batchSize: 3,
       enabled: true,
