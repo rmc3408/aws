@@ -264,7 +264,7 @@ export default class WebSocketApiStack extends Stack {
       layers: [webSocketARNlayer]
     })
     // give permission Lambda function to WEB SOCKET
-    this.webSocketApi.grantManageConnections(this.getBucketURL)
+    this.webSocketApi.grantManageConnections(this.eventInvoice)
 
     const eventDBPolicy = new PolicyStatement({
       effect: Effect.ALLOW,
@@ -289,7 +289,7 @@ export default class WebSocketApiStack extends Stack {
       }
     })
 
-    // SQS will have configurable events to send to eventInvoice lambda function under conditions
+    // Lambda Function will receive Event from DynamoDB transaction table trigger Queue
     this.eventInvoice.addEventSource(new DynamoEventSource(this.transationDatabase, {
       startingPosition: StartingPosition.TRIM_HORIZON,
       batchSize: 3,

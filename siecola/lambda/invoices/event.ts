@@ -18,22 +18,35 @@ const webSocketServices = new InvoiceWebSocket(webSocketClient)
 export async function eventHandler(event: DynamoDBStreamEvent, _ctx: Context): Promise<void> {
   
   // Events coming from SQS and dynamoStreamRecord
-  let listRecord: Array<Promise<PutItemOutput>> = []
+  let listRecord: Array<Promise<PutItemOutput | void>> = []
   event.Records.forEach((record: DynamoDBRecord ) => {
-    if (record.eventName === 'INSERT' && record.dynamodb!.NewImage!.pk.S?.startsWith('#invoice')) {
-      listRecord.push(createEvent(record, 'INVOICE_CREATED'))
+
+    console.log(record.eventName, record.dynamodb!.NewImage, record.dynamodb!.OldImage)
+
+    if (record.eventName === 'INSERT') {
+      console.log('INSERT', record.dynamodb!.NewImage!.pk.S)
+      if (record.dynamodb!.NewImage!.pk.S!.startsWith('#transaction')) {
+        console.log('Invoice transaction event received')
+     } else {
+        console.log('Invoice event received')
+        listRecord.push(createEvent(record, "INVOICE_CREATED"))
+     }
+    }
+    if (record.eventName === 'REMOVE') {
+      if (record.dynamodb!.OldImage!.pk.S === '#transaction') {
+         console.log('Invoice transaction event received')
+         listRecord.push(processExpiredTransaction(record))
+      }
     }
   })
   await Promise.all(listRecord)
-  console.log(await Promise.all(listRecord))
 }
 
 async function createEvent(record: DynamoDBRecord, eventType: string): Promise<PutItemOutput> {
-  const { pk, sk, transactionId, productId, quantity }: { [Key: string]: AttributeValue } = record.dynamodb!.NewImage!
+  const { pk, sk, transactionId, productId, quantity, connectionId, transactionStatus }: { [Key: string]: AttributeValue } = record.dynamodb!.NewImage!
   const timeStamp: number = Date.now()
-  const ttl = ~~(timeStamp / 1000 + (5 * 60))
+  const ttl = ~~(timeStamp / 1000 + (0.5 * 60))
 
-  //await webSocketServices.sendInvoiceStatus()
   return databaseClient.put({
     TableName: EVENT_DB_NAME,
     Item: {
@@ -47,7 +60,23 @@ async function createEvent(record: DynamoDBRecord, eventType: string): Promise<P
         productId: productId.S,
         quantity: quantity.N
       },
+      connectionId: connectionId,
+      transactionStatus,
       ttl: ttl
     }
   }).promise() as Promise<PutItemOutput>
+}
+
+async function processExpiredTransaction(transaction: DynamoDBRecord): Promise<void> {
+  const transactionId = transaction.dynamodb!.OldImage!.sk.S!
+  const connectionId = transaction.dynamodb!.OldImage!.connectionId.S!
+  const transactionStatus = transaction.dynamodb!.OldImage!.transactionStatus.S!
+  console.log(transaction.dynamodb!)
+
+  if (transactionStatus !== 'INVOICE_PROCESSED') {
+    await webSocketServices.sendInvoiceStatus(connectionId, transactionId, 'TIMEOUT')
+    await webSocketServices.disconnectClient(connectionId)
+  } else {
+    await webSocketServices.sendInvoiceStatus(connectionId, transactionId, transactionStatus)
+  }
 }

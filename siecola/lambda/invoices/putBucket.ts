@@ -19,7 +19,6 @@ const webSocketClient = new ApiGatewayManagementApi({ endpoint: WEBSOCKET_ENDPOI
 const webSocketServices = new InvoiceWebSocket(webSocketClient)
 
 export async function putHandler(event: S3Event, _ctx: Context): Promise<void> {
-  console.log(event)
   let listRecord: Array<Promise<void>> = []
 
   //list records from S3 notification
@@ -34,7 +33,7 @@ async function processEachRecord(record: S3EventRecord) {
   const transactionId = record.s3.object.key
   const transaction = await transactionRepo.getTransaction(transactionId)
   const { transactionStatus, connectionId } = transaction
-  console.log(transactionStatus, connectionId)
+  
   try {
     // Change status from Transaction GENERATED -> RECEIVED
     if (transactionStatus === InvoiceTransactionStatusEnum.GENERATED) {
@@ -78,7 +77,6 @@ async function processEachRecord(record: S3EventRecord) {
     ttl: 0,
     createdAt: Date.now(),
   }
-  console.log(newInvoice, invoiceFile)
 
   let listSavingInvoice: Array<Promise<unknown>> = []
   listSavingInvoice.push(invoiceRepo.createInvoice(newInvoice))
