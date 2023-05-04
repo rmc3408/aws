@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { DynamoDB, SNS } from 'aws-sdk';
+import { DynamoDB, EventBridge, SNS } from 'aws-sdk';
 import { captureAWS } from 'aws-xray-sdk';
 import { v4 as uuid } from 'uuid';
 import OrdersRepository from '/opt/node/orderLayer';
@@ -13,12 +13,16 @@ captureAWS(require('aws-sdk'));
 const ordersTableNameEnviroment = process.env.ORDERS_DB!;
 const productsTableNameEnviroment = process.env.PRODUCTS_DB!;
 const orderTopicARN = process.env.TOPIC_ORDER!;
+const autiBusName = process.env.AUDIT_BUS!;
 
+const snsClient = new SNS();
 const dynamoDBClient = new DynamoDB.DocumentClient();
+const eventClient = new EventBridge()
+
 const ordersRepositoryInstance = new OrdersRepository(dynamoDBClient, ordersTableNameEnviroment);
 const productsRepositoryInstance = new ProductsRepository(dynamoDBClient, productsTableNameEnviroment);
 
-const snsClient = new SNS();
+
 
 
 export async function ordersFetchHandler(event: APIGatewayProxyEvent, ctx: Context): Promise<APIGatewayProxyResult> {
@@ -72,6 +76,20 @@ export async function ordersFetchHandler(event: APIGatewayProxyEvent, ctx: Conte
 
     // Check if size is same, user not mistake product IDS.
     if (products.length !== preOrder.productIds.length) {
+
+      const resultEvent = await eventClient.putEvents({
+        Entries: [
+          {
+            Source: 'app.order',
+            EventBusName: autiBusName,
+            DetailType: 'order',
+            Time: new Date(),
+            Detail: JSON.stringify({ reason: 'PRODUCT_NOT_FOUND', orderRequest: preOrder })
+          }
+        ]
+      }).promise()
+      console.log(resultEvent)
+      
       return {
         statusCode: 404,
         headers: {},

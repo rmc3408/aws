@@ -101,6 +101,7 @@ class OrderStack extends Stack {
         ORDERS_DB: this.ordersDatabase.tableName,
         PRODUCTS_DB: props.productsDatabase.tableName,
         TOPIC_ORDER: this.orderTopic.topicArn,
+        AUDIT_BUS: props.auditBus.eventBusName
       },
       layers: [ordersARNlayer, productsARNLayer, orderModelsARNLayer, orderEventARNLayer],
     });
@@ -120,7 +121,6 @@ class OrderStack extends Stack {
       },
       environment: {
         ORDER_EVENTS_DATABASE: props.eventDatabase.tableName,
-        AUDIT_BUS: props.auditBus.eventBusName
       },
       layers: [orderEventRepositoryARNLayer, orderEventARNLayer],
     });
