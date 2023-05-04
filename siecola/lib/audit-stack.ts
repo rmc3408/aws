@@ -1,14 +1,14 @@
 import { Construct } from 'constructs'
-import { Stack, StackProps, Duration, RemovalPolicy } from 'aws-cdk-lib'
+import { Stack, StackProps, Duration } from 'aws-cdk-lib'
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs'
-import { LayerVersion, Tracing, LambdaInsightsVersion, Runtime } from 'aws-cdk-lib/aws-lambda'
+import { Tracing, LambdaInsightsVersion, Runtime } from 'aws-cdk-lib/aws-lambda'
 
 import { Queue } from 'aws-cdk-lib/aws-sqs'
 import { EventBus, Rule } from 'aws-cdk-lib/aws-events'
 import { LambdaFunction, SqsQueue } from 'aws-cdk-lib/aws-events-targets'
 
 class AuditStack extends Stack {
-  private readonly bus: EventBus
+  public readonly bus: EventBus
   private readonly invoiceHandler: NodejsFunction
   private readonly orderHandler: NodejsFunction
   private readonly errorsQueue: Queue

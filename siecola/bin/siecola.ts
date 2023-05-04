@@ -1,14 +1,16 @@
 #!/usr/bin/env node
-import 'source-map-support/register';
-import * as cdk from 'aws-cdk-lib';
-import ApiGatewayStack from '../lib/api-stack';
-import ProductsStack from '../lib/products-stack';
-import ProductsLayersStack from '../lib/products-layer';
-import EventProductsStack from '../lib/event-product-stack';
-import OrderLayersStack from '../lib/order-layer';
-import OrderStack from '../lib/orders-stack';
-import WebSocketApiStack from '../lib/web-socket-stack';
-import InvoiceLayersStack from '../lib/invoice-layer';
+import 'source-map-support/register'
+import * as cdk from 'aws-cdk-lib'
+import ProductsLayersStack from '@lib/products-layer';
+import OrderLayersStack from '@lib/order-layer';
+import EventProductsStack from '@lib/event-product-stack';
+import ProductsStack from '@lib/products-stack';
+import OrderStack from '@lib/orders-stack';
+import ApiGatewayStack from '@lib/api-stack';
+import InvoiceLayersStack from '@lib/invoice-layer';
+import WebSocketApiStack from '@lib/web-socket-stack';
+import AuditStack from '@lib/audit-stack'
+
 
 const app = new cdk.App();
 
@@ -24,6 +26,9 @@ const myAwsEnv: cdk.Environment = {
 const productsLayer = new ProductsLayersStack(app, 'ProductsLayer-App', { env: myAwsEnv }) 
 const ordersLayer = new OrderLayersStack(app, 'OrderLayer-App', { env: myAwsEnv })
 
+// Event Bus Stack
+const auditEventBus = new AuditStack(app, 'EventBus-App', { env: myAwsEnv })
+
 
 // Products Stacks
 const productEvent = new EventProductsStack(app, 'EventsProduct-App');
@@ -36,11 +41,14 @@ products.addDependency(productEvent);
 const orders = new OrderStack(app, 'Order-App', { 
   productsDatabase: products.productsDatabase,
   eventDatabase: productEvent.productsEventDatabase,
-  env: myAwsEnv
+  env: myAwsEnv,
+  auditBus: auditEventBus.bus
  })
 orders.addDependency(ordersLayer)
 orders.addDependency(productEvent)
 orders.addDependency(products)
+orders.addDependency(auditEventBus)
+
 
 
 // REST API Gatewat Stacks
@@ -57,9 +65,14 @@ apiGateway.addDependency(orders)
 
 // Web Socket Stack
 const invoiceLayers = new InvoiceLayersStack(app, 'InvoiceLayer-App')
-const webSocket = new WebSocketApiStack(app, 'WebsocketApi-App', { eventDb: productEvent.productsEventDatabase })
+const webSocket = new WebSocketApiStack(app, 'WebsocketApi-App', { 
+  eventDb: productEvent.productsEventDatabase,
+  auditBus: auditEventBus.bus
+})
 webSocket.addDependency(productEvent)
 webSocket.addDependency(invoiceLayers)
+webSocket.addDependency(auditEventBus)
+
 
 // tags for billing purproses
 cdk.Tags.of(products).add('Ecommerce-Products', 'UdemySiecola')
@@ -67,3 +80,4 @@ cdk.Tags.of(orders).add('Ecommerce-Orders', 'UdemySiecola')
 cdk.Tags.of(apiGateway).add('Ecommerce-API', 'UdemySiecola')
 cdk.Tags.of(productEvent).add('Ecommerce-Events', 'UdemySiecola')
 cdk.Tags.of(webSocket).add('Ecommerce-WebSocket', 'UdemySiecola')
+cdk.Tags.of(auditEventBus).add('Ecommerce-EventBridgeBus', 'UdemySiecola')

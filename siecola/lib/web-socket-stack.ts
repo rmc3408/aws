@@ -17,11 +17,13 @@ import { WebSocketLambdaIntegration } from '@aws-cdk/aws-apigatewayv2-integratio
 import { StringParameter } from 'aws-cdk-lib/aws-ssm'
 
 import {Queue} from "aws-cdk-lib/aws-sqs"
-import {DynamoEventSource, SqsDlq, SqsEventSourceProps} from "aws-cdk-lib/aws-lambda-event-sources"
+import { DynamoEventSource, SqsDlq } from "aws-cdk-lib/aws-lambda-event-sources"
+import { EventBus } from 'aws-cdk-lib/aws-events'
 
 
 interface WebSocketApiStackProps extends StackProps {
   eventDb: Table
+  auditBus: EventBus
 }
 
 export default class WebSocketApiStack extends Stack {
@@ -183,7 +185,8 @@ export default class WebSocketApiStack extends Stack {
       },
       environment: {
         TRANSACTION_DB_NAME: this.transationDatabase.tableName,
-        WEBSOCKET_ENDPOINT: this.webSocketApi.apiEndpoint + '/dev'
+        WEBSOCKET_ENDPOINT: this.webSocketApi.apiEndpoint + '/dev',
+        AUDIT_BUS: props.auditBus.eventBusName
       },
       layers: [transactionARNlayer, invoiceARNlayer, webSocketARNlayer]
     })
@@ -202,6 +205,7 @@ export default class WebSocketApiStack extends Stack {
     })
     this.putBucket.addToRolePolicy(getDeleteBucketPolicy)
     this.webSocketApi.grantManageConnections(this.putBucket)
+    props.auditBus.grantPutEventsTo(this.putBucket)
 
 
     // Lambda functions - cancel import handler
@@ -259,12 +263,15 @@ export default class WebSocketApiStack extends Stack {
       },
       environment: {
         EVENT_DB_NAME: props.eventDb.tableName,
-        WEBSOCKET_ENDPOINT: this.webSocketApi.apiEndpoint + '/dev'
+        WEBSOCKET_ENDPOINT: this.webSocketApi.apiEndpoint + '/dev',
+        AUDIT_BUS: props.auditBus.eventBusName
       },
       layers: [webSocketARNlayer]
     })
     // give permission Lambda function to WEB SOCKET
     this.webSocketApi.grantManageConnections(this.eventInvoice)
+    // give permission from Lambda function to use Event Bus
+    props.auditBus.grantPutEventsTo(this.eventInvoice)
 
     const eventDBPolicy = new PolicyStatement({
       effect: Effect.ALLOW,

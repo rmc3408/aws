@@ -9,12 +9,14 @@ import { LayerVersion, Tracing, LambdaInsightsVersion, Runtime } from 'aws-cdk-l
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { SqsEventSource, SqsEventSourceProps } from 'aws-cdk-lib/aws-lambda-event-sources';
+import { EventBus } from 'aws-cdk-lib/aws-events';
 
 
 
 interface OrderStackProps extends StackProps {
   productsDatabase: Table;
   eventDatabase: Table;
+  auditBus: EventBus
 }
 
 class OrderStack extends Stack {
@@ -68,7 +70,6 @@ class OrderStack extends Stack {
       displayName: 'Order Topic',
       topicName: 'ordertopic',
     });
-    
     // Create Simple Queue Service - SQS
     this.orderQueue = new Queue(this, 'OrderSQS-Stack', {
       queueName: 'orderQueue',
@@ -119,6 +120,7 @@ class OrderStack extends Stack {
       },
       environment: {
         ORDER_EVENTS_DATABASE: props.eventDatabase.tableName,
+        AUDIT_BUS: props.auditBus.eventBusName
       },
       layers: [orderEventRepositoryARNLayer, orderEventARNLayer],
     });
@@ -236,6 +238,9 @@ class OrderStack extends Stack {
     // Grant access from function return data to database
     this.ordersDatabase.grantReadWriteData(this.ordersfetchHandler);
     props.productsDatabase.grantReadData(this.ordersfetchHandler);
+
+    // Grant access from Audit bus to orderFetchHandler
+    props.auditBus.grantPutEventsTo(this.ordersfetchHandler)
        
   }
 }
