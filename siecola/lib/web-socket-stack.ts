@@ -277,7 +277,7 @@ export default class WebSocketApiStack extends Stack {
     // give permission to Database receive acess from lambda
     this.eventInvoice.addToRolePolicy(eventDBPolicy)
 
-    // Process stream items from database send to Queue
+    // Optional - Create Queue for failure Queue and DeadLetterQueue
     const invoiceQueue = new Queue(this, 'invoiceSQS-Stack', {
       queueName: 'invoiceQueue',
       deadLetterQueue: {
@@ -289,7 +289,7 @@ export default class WebSocketApiStack extends Stack {
       }
     })
 
-    // Lambda Function will receive Event from DynamoDB transaction table trigger Queue
+    // Lambda Function will receive Event from DynamoDB transaction table trigger by Queue
     this.eventInvoice.addEventSource(new DynamoEventSource(this.transationDatabase, {
       startingPosition: StartingPosition.TRIM_HORIZON,
       batchSize: 3,
