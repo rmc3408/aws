@@ -1,6 +1,6 @@
 import { captureAWS } from 'aws-xray-sdk'
 import { Context, DynamoDBRecord, DynamoDBStreamEvent } from 'aws-lambda'
-import { ApiGatewayManagementApi, DynamoDB } from 'aws-sdk'
+import { ApiGatewayManagementApi, DynamoDB, EventBridge } from 'aws-sdk'
 import InvoiceWebSocket from '/opt/node/transactionWebScoketLayer'
 import { AttributeValue, PutItemOutput } from 'aws-sdk/clients/dynamodb'
 
@@ -13,6 +13,9 @@ const databaseClient = new DynamoDB.DocumentClient()
 const WEBSOCKET_ENDPOINT = process.env.WEBSOCKET_ENDPOINT!.substring(6)
 const webSocketClient = new ApiGatewayManagementApi({ endpoint: WEBSOCKET_ENDPOINT })
 const webSocketServices = new InvoiceWebSocket(webSocketClient)
+
+const auditBusName = process.env.AUDIT_BUS!;
+const eventClient = new EventBridge()
 
 
 export async function eventHandler(event: DynamoDBStreamEvent, _ctx: Context): Promise<void> {
@@ -74,7 +77,22 @@ async function processExpiredTransaction(transaction: DynamoDBRecord): Promise<v
   console.log(transaction.dynamodb!)
 
   if (transactionStatus !== 'INVOICE_PROCESSED') {
-    await webSocketServices.sendInvoiceStatus(connectionId, transactionId, 'TIMEOUT')
+    const entriesErrors = {
+      Entries: [
+        {
+          Source: 'app.invoice',
+          EventBusName: auditBusName,
+          DetailType: 'invoice',
+          Time: new Date(),
+          Detail: JSON.stringify({ errorDetail: 'TIMEOUT', info: transactionId })
+        }
+      ]
+    }
+    const logginErrors = [
+      webSocketServices.sendInvoiceStatus(connectionId, transactionId, 'TIMEOUT'),
+      eventClient.putEvents(entriesErrors).promise()
+    ]
+    await Promise.all(logginErrors)
     await webSocketServices.disconnectClient(connectionId)
   } else {
     await webSocketServices.sendInvoiceStatus(connectionId, transactionId, transactionStatus)

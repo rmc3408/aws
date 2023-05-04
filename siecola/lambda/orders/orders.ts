@@ -13,7 +13,7 @@ captureAWS(require('aws-sdk'));
 const ordersTableNameEnviroment = process.env.ORDERS_DB!;
 const productsTableNameEnviroment = process.env.PRODUCTS_DB!;
 const orderTopicARN = process.env.TOPIC_ORDER!;
-const autiBusName = process.env.AUDIT_BUS!;
+const auditBusName = process.env.AUDIT_BUS!;
 
 const snsClient = new SNS();
 const dynamoDBClient = new DynamoDB.DocumentClient();
@@ -81,10 +81,10 @@ export async function ordersFetchHandler(event: APIGatewayProxyEvent, ctx: Conte
         Entries: [
           {
             Source: 'app.order',
-            EventBusName: autiBusName,
+            EventBusName: auditBusName,
             DetailType: 'order',
             Time: new Date(),
-            Detail: JSON.stringify({ reason: 'PRODUCT_NOT_FOUND', orderRequest: preOrder })
+            Detail: JSON.stringify({ reason: 'PRODUCT_NOT_FOUND', info: preOrder })
           }
         ]
       }).promise()
