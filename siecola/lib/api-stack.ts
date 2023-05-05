@@ -16,6 +16,7 @@ interface ApiGatewayIntegrationProps extends StackProps {
 
 class ApiGatewayStack extends Stack {
   private authorizer: CognitoUserPoolsAuthorizer
+  private adminAuthorizer: CognitoUserPoolsAuthorizer
   private customerPool: UserPool
   private adminPool: UserPool
 
@@ -36,7 +37,8 @@ class ApiGatewayStack extends Stack {
     });
 
     // Create UserPools and Authorizer before API Gateway Service
-    this.createUserPools()
+    this.createCustomerUserPools()
+    this.createAdminUserPools()
     this.createAuthorizer()
 
     // Create Resources and Methods for lambda function
@@ -127,14 +129,21 @@ class ApiGatewayStack extends Stack {
       authorizer: this.authorizer,
       authorizationType: AuthorizationType.COGNITO,
       // authorizationScopes is array of string = ScopeServer Identifier + '/' + scopeName
-      authorizationScopes: ['customers/web', 'customers/mobile']
+      authorizationScopes: ['customers/web', 'customers/mobile', 'customer/admin']
     }
 
     const authMethodOptions_WEB: MethodOptions = {
       authorizer: this.authorizer,
       authorizationType: AuthorizationType.COGNITO,
       // authorizationScopes is array of string = ScopeServer Identifier + '/' + scopeName
-      authorizationScopes: ['customers/web']
+      authorizationScopes: ['customers/web', 'customer/admin']
+    }
+
+    const adminMethodOptions: MethodOptions = {
+      authorizer: this.adminAuthorizer,
+      authorizationType: AuthorizationType.COGNITO,
+      // authorizationScopes is array of string = ScopeServer Identifier + '/' + scopeName
+      authorizationScopes: ['customers/admin']
     }
 
 
@@ -166,19 +175,20 @@ class ApiGatewayStack extends Stack {
     productsResource.addMethod('POST', productsAdminIntegrated, {
       requestValidator: postValidator,
       requestModels: { "application/json": postProductModel },
+      ...adminMethodOptions
     });
 
     const productIdResource = productsResource.addResource('{id}');
     // GET - '/products/{id}'
     productIdResource.addMethod('GET', productsFetchIntegrated, authMethodOptions_WEB);
     // PUT - '/products/{id}'
-    productIdResource.addMethod('PUT', productsAdminIntegrated, authMethodOptions_WEB);
+    productIdResource.addMethod('PUT', productsAdminIntegrated, adminMethodOptions);
     // DELETE - '/products/{id}'
-    productIdResource.addMethod('DELETE', productsAdminIntegrated, authMethodOptions_WEB);
+    productIdResource.addMethod('DELETE', productsAdminIntegrated, adminMethodOptions);
   }
 
 
-  private createUserPools() {
+  private createCustomerUserPools() {
 
     const lambdaFnAuth = this.getlambdaTriggerFunctions()
 
@@ -241,9 +251,58 @@ class ApiGatewayStack extends Stack {
     })
   }
 
+  private createAdminUserPools() {
+
+    const lambdaFnAuth = this.getlambdaTriggerFunctions()
+
+    this.adminPool = new UserPool(this, 'AdminPool', {
+      userPoolName: 'Admin',
+      selfSignUpEnabled: false,
+      removalPolicy: RemovalPolicy.DESTROY,
+      userInvitation: {
+        emailSubject: 'Welcome Admin',
+        emailBody: 'Your userName is {username} and password is {####}'
+      },
+      signInAliases: { email: true },
+      passwordPolicy: { minLength: 6, requireDigits: true },
+      accountRecovery: AccountRecovery.EMAIL_ONLY,
+      lambdaTriggers: {
+        postConfirmation: lambdaFnAuth.postConfirm
+      }
+    })
+
+    this.adminPool.addDomain('AdminDomain', {
+      cognitoDomain: {
+        domainPrefix: 'rmc-admin',
+      }
+    })
+
+    const adminScope = new ResourceServerScope({ scopeName: 'admin', scopeDescription: 'Full Access' });
+    
+    const serverWith_Scopes = this.adminPool.addResourceServer('ResourceServer', {
+      identifier: 'customers',
+      userPoolResourceServerName: 'AdminServer',
+      scopes: [ adminScope ],
+    })
+
+    this.adminPool.addClient('web-client', {
+      userPoolClientName: 'adminWEB',
+      authFlows: { userPassword: true },
+      accessTokenValidity: Duration.minutes(45),
+      refreshTokenValidity: Duration.days(30),
+      oAuth: { scopes: [ OAuthScope.resourceServer(serverWith_Scopes, adminScope) ]}
+    })
+  }
+
   private createAuthorizer() {
     this.authorizer = new CognitoUserPoolsAuthorizer(this, 'Authorizer', {
-      cognitoUserPools: [this.customerPool]
+      authorizerName: 'Fetch Authorizer',
+      cognitoUserPools: [this.customerPool, this.adminPool]
+    })
+
+    this.adminAuthorizer = new CognitoUserPoolsAuthorizer(this, 'AdminAuthorizer', {
+      authorizerName: 'Create Authorizer',
+      cognitoUserPools: [this.adminPool]
     })
   }
 
