@@ -5,7 +5,7 @@ import { Construct } from 'constructs';
 import { LogGroup } from 'aws-cdk-lib/aws-logs';
 
 import { AccountRecovery, BooleanAttribute, DateTimeAttribute, NumberAttribute, OAuthScope, ResourceServerScope, StringAttribute, UserPool, VerificationEmailStyle } from 'aws-cdk-lib/aws-cognito'
-import { } from 'aws-cdk-lib/aws-lambda'
+import { Runtime } from 'aws-cdk-lib/aws-lambda'
 
 interface ApiGatewayIntegrationProps extends StackProps {
   productsFetch: NodejsFunction;
@@ -179,6 +179,9 @@ class ApiGatewayStack extends Stack {
 
 
   private createUserPools() {
+
+    const lambdaFnAuth = this.getlambdaTriggerFunctions()
+
     this.customerPool = new UserPool(this, 'CustomerPool', {
       userPoolName: 'Customer',
       removalPolicy: RemovalPolicy.DESTROY,
@@ -199,6 +202,11 @@ class ApiGatewayStack extends Stack {
         'isEmployee': new BooleanAttribute({ mutable: true }),
         'joinedOn': new DateTimeAttribute(),
       },
+      lambdaTriggers: {
+        preAuthentication: lambdaFnAuth.preAuth,
+        postAuthentication: lambdaFnAuth.posAuth,
+        postConfirmation: lambdaFnAuth.postConfirm
+      }
     })
 
     this.customerPool.addDomain('CustomerDomain', {
@@ -237,6 +245,36 @@ class ApiGatewayStack extends Stack {
     this.authorizer = new CognitoUserPoolsAuthorizer(this, 'Authorizer', {
       cognitoUserPools: [this.customerPool]
     })
+  }
+
+  private getlambdaTriggerFunctions(): Record<string, NodejsFunction> {
+
+    const postConfirmFunction = new NodejsFunction(this, "PostConfirmFunction-Stack", {
+      functionName: 'postConfirmFunction',
+      runtime: Runtime.NODEJS_16_X,
+      entry: "lambda/auth/postConfirm.ts",
+      handler: "handler",
+    })
+
+    const preAuthFunction = new NodejsFunction(this, "PreAuthenticationFunction-Stack", {
+      functionName: 'preAuthFunction',
+      runtime: Runtime.NODEJS_16_X,
+      entry: "lambda/auth/preAuth.ts",
+      handler: "handler",
+    })
+
+    const posAuthFunction = new NodejsFunction(this, "PosAuthenticationFunction-Stack", {
+      functionName: 'posAuthFunction',
+      runtime: Runtime.NODEJS_16_X,
+      entry: "lambda/auth/posAuth.ts",
+      handler: "handler",
+    })
+
+    return { 
+      postConfirm: postConfirmFunction,
+      posAuth: posAuthFunction,
+      preAuth: preAuthFunction,
+    }
   }
 }
 
