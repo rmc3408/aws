@@ -37,8 +37,9 @@ class ApiGatewayStack extends Stack {
     });
 
     // Create UserPools and Authorizer before API Gateway Service
-    this.createCustomerUserPools()
-    this.createAdminUserPools()
+    const lambdaFnAuth = this.getlambdaTriggerFunctions()
+    this.createCustomerUserPools(lambdaFnAuth)
+    this.createAdminUserPools(lambdaFnAuth)
     this.createAuthorizer()
 
     // Create Resources and Methods for lambda function
@@ -46,7 +47,6 @@ class ApiGatewayStack extends Stack {
     this.createOrderServices(props, api);
     this.createEventsServices(props, api);
   }
-
 
   private createEventsServices(props: Pick<ApiGatewayIntegrationProps, 'eventsFetch'>, api: RestApi) {
     const eventsFetchIntegrated = new LambdaIntegration(props.eventsFetch);
@@ -66,8 +66,6 @@ class ApiGatewayStack extends Stack {
       },
     })
   }
-
-
 
   private createOrderServices(props: Pick<ApiGatewayIntegrationProps, 'ordersFetch'>, api: RestApi) {
     // Importing Lambda Functions to APIGateway
@@ -116,7 +114,6 @@ class ApiGatewayStack extends Stack {
       requestModels: { "application/json": postModel },
     });
   }
-
 
   private createProductService(props: Pick<ApiGatewayIntegrationProps, 'productsAdmin' | 'productsFetch'>, api: RestApi) {
     // Importing Lambda Functions to APIGateway
@@ -187,10 +184,7 @@ class ApiGatewayStack extends Stack {
     productIdResource.addMethod('DELETE', productsAdminIntegrated, adminMethodOptions);
   }
 
-
-  private createCustomerUserPools() {
-
-    const lambdaFnAuth = this.getlambdaTriggerFunctions()
+  private createCustomerUserPools(lambdaFnAuth: Record<string, NodejsFunction>) {
 
     this.customerPool = new UserPool(this, 'CustomerPool', {
       userPoolName: 'Customer',
@@ -251,9 +245,7 @@ class ApiGatewayStack extends Stack {
     })
   }
 
-  private createAdminUserPools() {
-
-    const lambdaFnAuth = this.getlambdaTriggerFunctions()
+  private createAdminUserPools(lambdaFnAuth: Record<string, NodejsFunction>) {
 
     this.adminPool = new UserPool(this, 'AdminPool', {
       userPoolName: 'Admin',
