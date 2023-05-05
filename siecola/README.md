@@ -51,3 +51,25 @@ https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_cognito-readme.html
 ```
 rm  ~/.docker/config.json
 ``` 
+
+
+### Authorization
+```
+email: rmc3408@protonmail.com
+name: Raphael
+password: secret123
+```
+
+**pre-made UI links** 
+
+- ClientID for WEB = 3d9e0bvqp559iufraihj8c62h4
+- ClientID for MOBILE = 1bj6ap4g5p82vsubv0foj32177
+</br></br>OBS: token will receive in query parameters
+
+</br>
+
+[SIGN UP](https://rmc-customer.auth.us-east-1.amazoncognito.com/signup?client_id=3d9e0bvqp559iufraihj8c62h4&response_type=token&scope=customers%2Fweb&redirect_uri=https%3A%2F%2Fexample.com)
+
+[LOGIN WEB](https://rmc-customer.auth.us-east-1.amazoncognito.com/login?client_id=3d9e0bvqp559iufraihj8c62h4&response_type=token&scope=customers%2Fweb&redirect_uri=https%3A%2F%2Fexample.com)
+
+[LOGIN MOBILE](https://rmc-customer.auth.us-east-1.amazoncognito.com/login?client_id=1bj6ap4g5p82vsubv0foj32177&response_type=token&scope=customers%2Fweb&redirect_uri=https%3A%2F%2Fexample.com)
