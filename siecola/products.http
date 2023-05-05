@@ -1,5 +1,5 @@
 @baseEndpoint = https://ulk4upbahc.execute-api.us-east-1.amazonaws.com/prod
-@productId = 8e5d9405-712a-4710-b8b1-97a091c1865f
+@productId = 94010c24-8502-4b5b-a66c-c2a24ddf9b49
 
 ### GET All Products
 GET {{baseEndpoint}}/products HTTP/1.1

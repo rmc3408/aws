@@ -194,11 +194,11 @@ class ApiGatewayStack extends Stack {
       },
       signInAliases: { email: true, phone: false, username: false },
       standardAttributes: { fullname: { required: true, mutable: false }},
-      passwordPolicy: { minLength: 5, requireDigits: true },
+      passwordPolicy: { minLength: 6, requireDigits: true },
       accountRecovery: AccountRecovery.EMAIL_ONLY,
       customAttributes: {
-        'jobPosition': new StringAttribute({ minLen: 5, maxLen: 15, mutable: false }),
-        'age': new NumberAttribute({ min: 1, max: 3, mutable: true, }),
+        'jobPosition': new StringAttribute({ minLen: 6, maxLen: 15, mutable: false }),
+        'age': new NumberAttribute({ min: 0, max: 120, mutable: true }),
         'isEmployee': new BooleanAttribute({ mutable: true }),
         'joinedOn': new DateTimeAttribute(),
       },
@@ -227,7 +227,7 @@ class ApiGatewayStack extends Stack {
     this.customerPool.addClient('web-client', {
       userPoolClientName: 'customerWEB',
       authFlows: { userPassword: true },
-      accessTokenValidity: Duration.hours(2),
+      accessTokenValidity: Duration.minutes(30),
       refreshTokenValidity: Duration.days(30),
       oAuth: { scopes: [ OAuthScope.resourceServer(serverWith_Scopes, webScope) ]}
     })
@@ -235,7 +235,7 @@ class ApiGatewayStack extends Stack {
     this.customerPool.addClient('mobile-client', {
       userPoolClientName: 'customerMobile',
       authFlows: { userPassword: true },
-      accessTokenValidity: Duration.days(30),
+      accessTokenValidity: Duration.minutes(30),
       refreshTokenValidity: Duration.days(30),
       oAuth: { scopes: [ OAuthScope.resourceServer(serverWith_Scopes, mobileScope) ]}
     })
