@@ -1,9 +1,11 @@
-import { JsonSchemaType, LambdaIntegration, LogGroupLogDestination, MethodLoggingLevel, Model, RequestValidator, RestApi } from 'aws-cdk-lib/aws-apigateway';
+import { AuthorizationType, CognitoUserPoolsAuthorizer, JsonSchemaType, LambdaIntegration, LogGroupLogDestination, MethodLoggingLevel, MethodOptions, Model, RequestValidator, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { Stack, StackProps } from 'aws-cdk-lib';
+import { Duration, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { LogGroup } from 'aws-cdk-lib/aws-logs';
 
+import { AccountRecovery, BooleanAttribute, DateTimeAttribute, NumberAttribute, OAuthScope, ResourceServerScope, StringAttribute, UserPool, VerificationEmailStyle } from 'aws-cdk-lib/aws-cognito'
+import { } from 'aws-cdk-lib/aws-lambda'
 
 interface ApiGatewayIntegrationProps extends StackProps {
   productsFetch: NodejsFunction;
@@ -13,6 +15,10 @@ interface ApiGatewayIntegrationProps extends StackProps {
 }
 
 class ApiGatewayStack extends Stack {
+  private authorizer: CognitoUserPoolsAuthorizer
+  private customerPool: UserPool
+  private adminPool: UserPool
+
   constructor(scope: Construct, id: string, props: ApiGatewayIntegrationProps) {
     super(scope, id, props);
 
@@ -28,6 +34,10 @@ class ApiGatewayStack extends Stack {
         accessLogDestination: logApiDestiny,
       },
     });
+
+    // Create UserPools and Authorizer before API Gateway Service
+    this.createUserPools()
+    this.createAuthorizer()
 
     // Create Resources and Methods for lambda function
     this.createProductService(props, api);
@@ -113,8 +123,23 @@ class ApiGatewayStack extends Stack {
     
     const productsResource = api.root.addResource('products');
 
+    const authMethodOptions_FULL: MethodOptions = {
+      authorizer: this.authorizer,
+      authorizationType: AuthorizationType.COGNITO,
+      // authorizationScopes is array of string = ScopeServer Identifier + '/' + scopeName
+      authorizationScopes: ['customers/web', 'customers/mobile']
+    }
+
+    const authMethodOptions_WEB: MethodOptions = {
+      authorizer: this.authorizer,
+      authorizationType: AuthorizationType.COGNITO,
+      // authorizationScopes is array of string = ScopeServer Identifier + '/' + scopeName
+      authorizationScopes: ['customers/web']
+    }
+
+
     // GET - '/products'
-    productsResource.addMethod('GET', productsFetchIntegrated);
+    productsResource.addMethod('GET', productsFetchIntegrated, authMethodOptions_FULL);
     
     // POST - '/products/'
     const postValidator = new RequestValidator(this, "product-body-validator-post-stack", {
@@ -145,11 +170,73 @@ class ApiGatewayStack extends Stack {
 
     const productIdResource = productsResource.addResource('{id}');
     // GET - '/products/{id}'
-    productIdResource.addMethod('GET', productsFetchIntegrated);
+    productIdResource.addMethod('GET', productsFetchIntegrated, authMethodOptions_WEB);
     // PUT - '/products/{id}'
-    productIdResource.addMethod('PUT', productsAdminIntegrated);
+    productIdResource.addMethod('PUT', productsAdminIntegrated, authMethodOptions_WEB);
     // DELETE - '/products/{id}'
-    productIdResource.addMethod('DELETE', productsAdminIntegrated);
+    productIdResource.addMethod('DELETE', productsAdminIntegrated, authMethodOptions_WEB);
+  }
+
+
+  private createUserPools() {
+    this.customerPool = new UserPool(this, 'CustomerPool', {
+      userPoolName: 'Customer',
+      removalPolicy: RemovalPolicy.DESTROY,
+      selfSignUpEnabled: true,
+      autoVerify: { email: true, phone: false },
+      userVerification: { 
+        emailSubject: "Verify your email", 
+        emailBody: 'Thansk for signUP, verification code is {####}',
+        emailStyle: VerificationEmailStyle.CODE
+      },
+      signInAliases: { email: true, phone: false, username: false },
+      standardAttributes: { fullname: { required: true, mutable: false }},
+      passwordPolicy: { minLength: 5, requireDigits: true },
+      accountRecovery: AccountRecovery.EMAIL_ONLY,
+      customAttributes: {
+        'jobPosition': new StringAttribute({ minLen: 5, maxLen: 15, mutable: false }),
+        'age': new NumberAttribute({ min: 1, max: 3, mutable: true, }),
+        'isEmployee': new BooleanAttribute({ mutable: true }),
+        'joinedOn': new DateTimeAttribute(),
+      },
+    })
+
+    this.customerPool.addDomain('CustomerDomain', {
+      cognitoDomain: {
+        domainPrefix: 'rmc-customer',
+      }
+    })
+
+    const webScope = new ResourceServerScope({ scopeName: 'web', scopeDescription: 'WEB read-only' });
+    const mobileScope = new ResourceServerScope({ scopeName: 'mobile', scopeDescription: 'Mobile read-only' });
+    
+    const serverWith_Scopes = this.customerPool.addResourceServer('ResourceServer', {
+      identifier: 'customers',
+      userPoolResourceServerName: 'CustomerServer',
+      scopes: [ webScope, mobileScope ],
+    })
+
+    this.customerPool.addClient('web-client', {
+      userPoolClientName: 'customerWEB',
+      authFlows: { userPassword: true },
+      accessTokenValidity: Duration.hours(2),
+      refreshTokenValidity: Duration.days(30),
+      oAuth: { scopes: [ OAuthScope.resourceServer(serverWith_Scopes, webScope) ]}
+    })
+
+    this.customerPool.addClient('mobile-client', {
+      userPoolClientName: 'customerMobile',
+      authFlows: { userPassword: true },
+      accessTokenValidity: Duration.days(30),
+      refreshTokenValidity: Duration.days(30),
+      oAuth: { scopes: [ OAuthScope.resourceServer(serverWith_Scopes, mobileScope) ]}
+    })
+  }
+
+  private createAuthorizer() {
+    this.authorizer = new CognitoUserPoolsAuthorizer(this, 'Authorizer', {
+      cognitoUserPools: [this.customerPool]
+    })
   }
 }
 

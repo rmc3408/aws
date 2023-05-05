@@ -24,10 +24,14 @@ https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_apigatewayv2-readme.
 ### aws-cdk-lib » aws_s3
 https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_s3-readme.html
 
-### @aws-cdk/aws-apigatewayv2-alpha >> @aws-cdk/aws-apigatewayv2-integrations-alpha
+### @aws-cdk/aws-apigatewayv2-alpha » @aws-cdk/aws-apigatewayv2-integrations-alpha
 https://docs.aws.amazon.com/cdk/api/v2/docs/@aws-cdk_aws-apigatewayv2-alpha.WebSocketApi.html
 
+### aws-cdk-lib/aws-events » aws-cdk-lib/aws-events-targets <- EventBus Queue - AWS EventBridge 
+https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_events-readme.html
 
+### aws-cdk-lib » aws-cognito
+https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_cognito-readme.html
 
 
 
