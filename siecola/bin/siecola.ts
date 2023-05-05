@@ -10,6 +10,7 @@ import ApiGatewayStack from '@lib/api-stack';
 import InvoiceLayersStack from '@lib/invoice-layer';
 import WebSocketApiStack from '@lib/web-socket-stack';
 import AuditStack from '@lib/audit-stack'
+import AuthLayersStack from '@lib/auth-layer';
 
 
 const app = new cdk.App();
@@ -25,6 +26,7 @@ const myAwsEnv: cdk.Environment = {
 //Layers with share code between lambdas
 const productsLayer = new ProductsLayersStack(app, 'ProductsLayer-App', { env: myAwsEnv }) 
 const ordersLayer = new OrderLayersStack(app, 'OrderLayer-App', { env: myAwsEnv })
+const authLayer = new AuthLayersStack(app, 'AuthLayer-App', { env: myAwsEnv })
 
 // Event Bus Stack
 const auditEventBus = new AuditStack(app, 'EventBus-App', { env: myAwsEnv })
@@ -34,6 +36,7 @@ const auditEventBus = new AuditStack(app, 'EventBus-App', { env: myAwsEnv })
 const productEvent = new EventProductsStack(app, 'EventsProduct-App');
 const products = new ProductsStack(app, 'Products-App', { eventDatabase: productEvent.productsEventDatabase, env: myAwsEnv })
 products.addDependency(productsLayer);
+products.addDependency(authLayer);
 products.addDependency(productEvent);
 
 

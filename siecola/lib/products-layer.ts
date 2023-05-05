@@ -14,7 +14,7 @@ export default class ProductsLayersStack extends Stack {
       code: Code.fromAsset('lambda/products/layers/productsLayer'),
       compatibleRuntimes: [Runtime.NODEJS_16_X],
       layerVersionName: 'ProductsLayer',
-      //removalPolicy: RemovalPolicy.RETAIN
+      removalPolicy: RemovalPolicy.DESTROY
     });
     new StringParameter(this, 'ProductsLayerVersionArn-Stack', {
       parameterName: 'ProductsParameterArn',
@@ -25,7 +25,7 @@ export default class ProductsLayersStack extends Stack {
       code: Code.fromAsset('lambda/products/layers/productEventLayer'),
       compatibleRuntimes: [Runtime.NODEJS_16_X],
       layerVersionName: 'ProductEventsLayer',
-      //removalPolicy: RemovalPolicy.RETAIN
+      removalPolicy: RemovalPolicy.DESTROY
     });
     new StringParameter(this, 'ProductEventsLayerVersionArn-Stack', {
       parameterName: 'ProductEventsParameterArn',

@@ -6,6 +6,7 @@ import { LogGroup } from 'aws-cdk-lib/aws-logs';
 
 import { AccountRecovery, BooleanAttribute, DateTimeAttribute, NumberAttribute, OAuthScope, ResourceServerScope, StringAttribute, UserPool, VerificationEmailStyle } from 'aws-cdk-lib/aws-cognito'
 import { Runtime } from 'aws-cdk-lib/aws-lambda'
+import { Effect, Policy, PolicyStatement, Role } from 'aws-cdk-lib/aws-iam';
 
 interface ApiGatewayIntegrationProps extends StackProps {
   productsFetch: NodejsFunction;
@@ -38,9 +39,19 @@ class ApiGatewayStack extends Stack {
 
     // Create UserPools and Authorizer before API Gateway Service
     const lambdaFnAuth = this.getlambdaTriggerFunctions()
+    
     this.createCustomerUserPools(lambdaFnAuth)
     this.createAdminUserPools(lambdaFnAuth)
     this.createAuthorizer()
+    const policyStatement = new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: ['cognito-idp:AdminGetUser'],
+      resources: [ this.adminPool.userPoolArn ]
+    })
+    const policy = new Policy(this, 'AdminGetUserPolicy', { statements: [ policyStatement ] })
+    policy.attachToRole(<Role> props.productsAdmin.role)
+
+
 
     // Create Resources and Methods for lambda function
     this.createProductService(props, api);
@@ -126,14 +137,14 @@ class ApiGatewayStack extends Stack {
       authorizer: this.authorizer,
       authorizationType: AuthorizationType.COGNITO,
       // authorizationScopes is array of string = ScopeServer Identifier + '/' + scopeName
-      authorizationScopes: ['customers/web', 'customers/mobile', 'customer/admin']
+      authorizationScopes: ['customers/web', 'customers/mobile', 'customers/admin']
     }
 
     const authMethodOptions_WEB: MethodOptions = {
       authorizer: this.authorizer,
       authorizationType: AuthorizationType.COGNITO,
       // authorizationScopes is array of string = ScopeServer Identifier + '/' + scopeName
-      authorizationScopes: ['customers/web', 'customer/admin']
+      authorizationScopes: ['customers/web', 'customers/admin']
     }
 
     const adminMethodOptions: MethodOptions = {
@@ -288,12 +299,12 @@ class ApiGatewayStack extends Stack {
 
   private createAuthorizer() {
     this.authorizer = new CognitoUserPoolsAuthorizer(this, 'Authorizer', {
-      authorizerName: 'Fetch Authorizer',
+      authorizerName: 'getDataAuthorizer',
       cognitoUserPools: [this.customerPool, this.adminPool]
     })
 
     this.adminAuthorizer = new CognitoUserPoolsAuthorizer(this, 'AdminAuthorizer', {
-      authorizerName: 'Create Authorizer',
+      authorizerName: 'creatingDataAuthorizer',
       cognitoUserPools: [this.adminPool]
     })
   }

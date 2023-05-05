@@ -27,7 +27,6 @@ class ProductsStack extends Stack {
       billingMode:  BillingMode.PAY_PER_REQUEST,
     })
 
-
     // Get Layer Value from AWS SSM and connect to Product Layer Stack
     const productsArnValue = StringParameter.valueForStringParameter(this, 'ProductsParameterArn')
     const layerConnectedValueProducts = LayerVersion.fromLayerVersionArn(this, 'ProductsLayer-Stack', productsArnValue);
@@ -36,6 +35,9 @@ class ProductsStack extends Stack {
     const productsEventArnValue = StringParameter.valueForStringParameter(this, 'ProductEventsParameterArn')
     const layerConnectedValueProductEvents = LayerVersion.fromLayerVersionArn(this, 'ProductEventsLayer-Stack', productsEventArnValue);
 
+    // Get Layer Value from AWS SSM and connect to Product Layer Stack
+    const userInfoArnValue = StringParameter.valueForStringParameter(this, 'userParameterArn')
+    const layerUserInfo = LayerVersion.fromLayerVersionArn(this, 'UserInfoVersionArn-Stack', userInfoArnValue);
 
     // Lambda Function for Events Products
     this.productsEventHandler = new NodejsFunction(this, "ProductsEventFunction-Stack", {
@@ -95,7 +97,7 @@ class ProductsStack extends Stack {
         PRODUCTS_DB: this.productsDatabase.tableName,
         PRODUCT_EVENT_FUNCTION: this.productsEventHandler.functionName
       },
-      layers: [layerConnectedValueProducts, layerConnectedValueProductEvents] //connect Lambda to Lambda
+      layers: [layerConnectedValueProducts, layerConnectedValueProductEvents, layerUserInfo]
     })
     // Grant access for function return data to database
     this.productsDatabase.grantWriteData(this.productsAdminHandler)
